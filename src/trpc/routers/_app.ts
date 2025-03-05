@@ -1,3 +1,6 @@
+// eslint-disable check-file/filename-naming-convention
+// eslint-disable check-file/filename-naming
+
 import { automationsRouter } from "@/modules/automations/server/procedure";
 import { reviewsRouter } from "@/modules/mailing/server/procedure";
 

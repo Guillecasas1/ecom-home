@@ -102,7 +102,7 @@ function validateWooCommerceSignature (
   signature: string | null,
   payload: string
 ): boolean {
-  if (!signature || !process.env.WOOCOMMERCE_WEBHOOK_SECRET) {
+  if (!signature) {
     console.warn("Missing webhook signature or secret");
     return false;
   }
@@ -110,7 +110,7 @@ function validateWooCommerceSignature (
   try {
     const hmac = crypto.createHmac(
       "sha256",
-      process.env.WOOCOMMERCE_WEBHOOK_SECRET
+      env.WOOCOMMERCE_WEBHOOK_SECRET
     );
     const calculatedSignature = hmac.update(payload).digest("base64");
 
@@ -249,7 +249,7 @@ async function createFollowupAutomation (params: {
         stepOrder: 1,
         stepType: "send_email",
         templateId: params.templateId,
-        subject: `¿Qué tal tu experiencia con tu compra en Nuestra Tienda?`,
+        subject: "¿Qué tal tu experiencia con tu compra en La Batita Presumida?",
         waitDuration: params.delayDays * 24 * 60, // convertir días a minutos
         isActive: true,
       });

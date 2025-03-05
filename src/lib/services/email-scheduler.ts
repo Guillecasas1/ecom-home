@@ -304,19 +304,6 @@ async function prepareAndSendEmail (
       },
     });
 
-    console.log("Valores a insertar en emailSends:", {
-      subscriberId: subscriber.id,
-      sentAt: new Date(),
-      status: "sent",
-      emailContentLength: emailContent ? emailContent.length : 0,
-      metadata: {
-        automationId: automation.id,
-        stepId: step.id,
-        orderId: triggerSettings.orderId,
-        messageId: emailResult.messageId,
-      },
-    });
-
     if (emailResult.success) {
       // Registrar el envío
       await db.insert(emailSends).values({
@@ -388,6 +375,7 @@ export async function scheduleEmail ({
   subscriberId: number;
   delayDays: number;
   subject?: string;
+  // eslint-disable-next-line
   metadata?: Record<string, any>;
 }): Promise<{ success: boolean; automationId?: number; error?: string }> {
   try {

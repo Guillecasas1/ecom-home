@@ -25,12 +25,12 @@ export type EmailOptions = {
     content: Buffer | string;
     contentType?: string;
   }>;
+  // eslint-disable-next-line
   metadata?: Record<string, any>;
   trackOpens?: boolean;
   trackClicks?: boolean;
 };
 
-// @ts-ignore
 export type EmailResult = {
   success: boolean;
   messageId?: string;
@@ -55,6 +55,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
     }
 
     const providerType = emailConfig.providerType;
+    // eslint-disable-next-line
     const providerConfig = emailConfig.providerConfig as Record<string, any>;
 
     // Validar los parámetros básicos requeridos
@@ -215,6 +216,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
  */
 async function sendViaSmtp (
   options: EmailOptions,
+  // eslint-disable-next-line
   config: Record<string, any>
 ): Promise<EmailResult> {
   try {

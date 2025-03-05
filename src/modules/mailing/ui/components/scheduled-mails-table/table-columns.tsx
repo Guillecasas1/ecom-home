@@ -58,7 +58,7 @@ export const emailAutomationsListColumns: ColumnDef<EmailAutomation>[] = [
     accessorKey: "status",
     header: "Estado",
     cell: ({ row }) => {
-      let automation = row.original;
+      const automation = row.original;
 
       // Definir los datos del estado (texto y color)
       const statusData: Record<string, { text: string; color: string }> = {

@@ -38,7 +38,7 @@ export interface WoocommerceOrder {
   shipping_lines: ShippingLine[];
 }
 
-// @ts-ignore
+// eslint-disable-next-line
 interface ShippingLine {
   id: number;
   method_title: string;
@@ -70,7 +70,7 @@ interface MetaData {
 }
 
 
-// @ts-ignore
+// eslint-disable-next-line
 export interface WoocommerceLineItem {
   id: number;
   name: string;
