@@ -3,9 +3,10 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { UrlObject } from "node:url";
 
 interface BackButtonProps {
-  href: string;
+  href: UrlObject;
   label: string;
 }
 
