@@ -1,36 +1,31 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Toaster } from "sonner";
 
-import AppNavbar from "@/components/app-navbar";
-import Providers from "@/components/providers";
+import { TRPCProvider } from "@/trpc/client";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Next.js Starter App",
-  description: "A basic starter for next.js",
+  title: "Ecom Home - La Batita Presumida",
+  description: "La Batita Presumida ERP",
 };
 
-export default function RootLayout({
+export default async function RootLayout ({
   children,
-}: Readonly<{
+  ...props
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link
-          rel="icon"
-          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>"
-        />
-      </head>
-      <body className="h-screen w-screen">
-        <Providers>
-          <AppNavbar />
-          <main className="flex-grow overflow-auto bg-[url(/light-bg.svg)] bg-cover dark:bg-[url(/dark-bg.svg)]">
-            <Suspense>{children}</Suspense>
-          </main>
-        </Providers>
+    <html lang="es">
+      <body>
+        <TRPCProvider>
+          <NextThemesProvider {...props} attribute="class">
+            <Toaster richColors position="bottom-center" />
+            {children}
+          </NextThemesProvider>
+        </TRPCProvider>
       </body>
     </html>
   );

@@ -1,14 +1,8 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-import { env } from "@/env/server";
+const connectionString = process.env.SUPABASE_DATABASE_URL!;
 
-import * as schema from "./schema/index";
-
-export const client = postgres(env.DATABASE_URL, {
-  max: env.DB_MIGRATING ? 1 : undefined,
-});
-const db = drizzle(client, {
-  schema,
-});
-export default db;
+// Disable prefetch as it is not supported for "Transaction" pool mode
+const client = postgres(connectionString, { prepare: false })
+export const db = drizzle(client);
