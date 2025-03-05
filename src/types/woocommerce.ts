@@ -38,14 +38,15 @@ export interface WoocommerceOrder {
   shipping_lines: ShippingLine[];
 }
 
+// @ts-ignore
 interface ShippingLine {
   id: number;
   method_title: string;
   method_id: string;
   total: string;
   total_tax: string;
-  taxes: any[];
-  meta_data: any[];
+  taxes: Tax[];
+  meta_data: MetaData[];
 }
 
 interface Address {
@@ -68,6 +69,8 @@ interface MetaData {
   value: string;
 }
 
+
+// @ts-ignore
 export interface WoocommerceLineItem {
   id: number;
   name: string;

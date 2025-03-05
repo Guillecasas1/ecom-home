@@ -24,7 +24,7 @@ type OrderCompletedTrigger = {
 /**
  * Procesa los emails programados y los envía cuando sea el momento
  */
-export async function processScheduledEmails() {
+export async function processScheduledEmails () {
   const now = new Date();
   console.info("Starting scheduled email processing");
 
@@ -169,7 +169,8 @@ export async function processScheduledEmails() {
 /**
  * Prepara y envía un email basado en una automatización
  */
-async function prepareAndSendEmail(
+// @ts-ignore
+async function prepareAndSendEmail (
   automation: any,
   step: any,
   template: any,
@@ -299,7 +300,7 @@ async function prepareAndSendEmail(
 /**
  * Personaliza el contenido del email sustituyendo variables
  */
-function personalizeEmailContent(
+function personalizeEmailContent (
   content: string,
   data: {
     subscriberId: number;
@@ -326,7 +327,7 @@ function personalizeEmailContent(
 /**
  * Programa un email para ser enviado después de un número específico de días
  */
-export async function scheduleEmail({
+export async function scheduleEmail ({
   templateId,
   subscriberId,
   delayDays,

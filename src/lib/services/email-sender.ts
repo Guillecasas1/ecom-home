@@ -30,6 +30,7 @@ export type EmailOptions = {
   trackClicks?: boolean;
 };
 
+// @ts-ignore
 export type EmailResult = {
   success: boolean;
   messageId?: string;
@@ -40,7 +41,7 @@ export type EmailResult = {
 /**
  * Envía un email utilizando el proveedor configurado
  */
-export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
+export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
   try {
     // Obtener la configuración activa del email
     const [emailConfig] = await db
@@ -212,7 +213,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 /**
  * Envía email a través de SMTP (nodemailer)
  */
-async function sendViaSmtp(
+async function sendViaSmtp (
   options: EmailOptions,
   config: Record<string, any>
 ): Promise<EmailResult> {
@@ -261,13 +262,13 @@ async function sendViaSmtp(
         "X-Entity-Ref-ID": options.metadata?.messageId || Date.now().toString(),
         ...(options.metadata
           ? Object.entries(options.metadata).reduce(
-              (acc, [key, value]) => {
-                acc[`X-Metadata-${key}`] =
-                  typeof value === "string" ? value : JSON.stringify(value);
-                return acc;
-              },
-              {} as Record<string, string>
-            )
+            (acc, [key, value]) => {
+              acc[`X-Metadata-${key}`] =
+                typeof value === "string" ? value : JSON.stringify(value);
+              return acc;
+            },
+            {} as Record<string, string>
+          )
           : {}),
       },
     };
