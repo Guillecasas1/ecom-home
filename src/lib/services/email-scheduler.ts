@@ -21,6 +21,57 @@ type OrderCompletedTrigger = {
   customerName?: string;
 };
 
+type Step = {
+  id: number;
+  isActive: boolean;
+  automationId: number;
+  stepOrder: number;
+  stepType: string;
+  subject: string | null;
+  content: string | null;
+  templateId: number | null;
+  waitDuration: number | null;
+  conditions: unknown;
+}
+
+type Automation = {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  description: string | null;
+  triggerType: string;
+  triggerSettings: unknown;
+  status: string;
+}
+
+type Template = {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  subject: string;
+  content: string;
+  previewText: string | null;
+  category: string | null;
+  metadata: unknown;
+}
+
+type EmailConfig = {
+  id: number;
+  providerType: string;
+  providerConfig: unknown;
+  defaultFromName: string;
+  defaultFromEmail: string;
+  defaultReplyTo: string | null;
+  sendLimit: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /**
  * Procesa los emails programados y los envía cuando sea el momento
  */
@@ -169,14 +220,13 @@ export async function processScheduledEmails () {
 /**
  * Prepara y envía un email basado en una automatización
  */
-// @ts-ignore
 async function prepareAndSendEmail (
-  automation: any,
-  step: any,
-  template: any,
+  automation: Automation,
+  step: Step,
+  template: Template | null,
   triggerSettings: OrderCompletedTrigger,
-  emailConfig: any
-): Promise<{ success: boolean; error?: any }> {
+  emailConfig: EmailConfig
+): Promise<{ success: boolean; error?: unknown }> {
   try {
     // Obtener el suscriptor por ID (más eficiente)
     const [subscriber] = await db
@@ -286,7 +336,7 @@ async function prepareAndSendEmail (
 
       return { success: true };
     } else {
-      throw new Error(emailResult.error || "Unknown error sending email");
+      throw new Error(emailResult.error as string || "Unknown error sending email");
     }
   } catch (error) {
     console.error("Error preparing and sending email", { error });

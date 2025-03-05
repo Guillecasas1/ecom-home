@@ -34,8 +34,8 @@ export type EmailOptions = {
 export type EmailResult = {
   success: boolean;
   messageId?: string;
-  providerResponse?: any;
-  error?: any;
+  providerResponse?: unknown;
+  error?: unknown;
 };
 
 /**

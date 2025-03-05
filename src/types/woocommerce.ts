@@ -83,7 +83,7 @@ export interface WoocommerceLineItem {
   total: string;
   total_tax: string;
   taxes: Tax[];
-  meta_data: any[];
+  meta_data: unknown[];
   sku: string;
   price: number;
 }
