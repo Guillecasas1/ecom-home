@@ -4,8 +4,6 @@ import { ZodError, z } from "zod";
 export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "production"]),
-    GOOGLE_CLIENT_ID: z.string(),
-    GOOGLE_CLIENT_SECRET: z.string(),
     SUPABASE_DATABASE_URL: z.string(),
     SUPABASE_URL: z.string().url(),
     SUPABASE_ANON_KEY: z.string(),
