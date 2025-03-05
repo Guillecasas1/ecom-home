@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "sonner";
 
 import { TRPCProvider } from "@/trpc/client";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 import "./globals.css";
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   description: "La Batita Presumida ERP",
 };
 
-export default async function RootLayout ({
+export default async function RootLayout({
   children,
   ...props
 }: {

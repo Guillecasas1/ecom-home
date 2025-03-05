@@ -23,19 +23,15 @@ export const CardWrapper = ({
   headerLabel,
   backButtonLabel,
   backButtonHref,
-  showSocial
+  showSocial,
 }: CardWrapperProps) => {
   return (
-    <Card className="shadow-md min-w-[400px]">
+    <Card className="min-w-[400px] shadow-md">
       <CardHeader>
         <Header label={headerLabel} />
       </CardHeader>
       <CardContent>{children}</CardContent>
-      {showSocial && (
-        <CardFooter>
-
-        </CardFooter>
-      )}
+      {showSocial && <CardFooter></CardFooter>}
       <CardFooter>
         <BackButton label={backButtonLabel} href={backButtonHref} />
       </CardFooter>

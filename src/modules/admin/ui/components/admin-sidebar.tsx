@@ -1,24 +1,20 @@
-"use client"
+"use client";
 
-import {
-  AudioWaveform,
-  Bot,
-  Command,
-  GalleryVerticalEnd
-} from "lucide-react"
-import * as React from "react"
+import * as React from "react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { IconAutomation } from "@tabler/icons-react";
+import { AudioWaveform, Bot, Command, GalleryVerticalEnd } from "lucide-react";
+
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { IconAutomation } from "@tabler/icons-react"
+} from "@/components/ui/sidebar";
 
 // This is sample data.
 const data = {
@@ -81,9 +77,11 @@ const data = {
       ],
     },
   ],
-}
+};
 
-export function AdminSidebar ({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AdminSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -97,5 +95,5 @@ export function AdminSidebar ({ ...props }: React.ComponentProps<typeof Sidebar>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

@@ -1,5 +1,3 @@
-import { createTRPCRouter } from '@/trpc/init';
+import { createTRPCRouter } from "@/trpc/init";
 
-export const automationsRouter = createTRPCRouter({
-
-});
+export const automationsRouter = createTRPCRouter({});

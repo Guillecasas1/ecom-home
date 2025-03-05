@@ -1,8 +1,10 @@
 // lib/services/email-sender.ts
-import { db } from '@/db';
-import { emailSettings } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import nodemailer from 'nodemailer';
+import { eq } from "drizzle-orm";
+import nodemailer from "nodemailer";
+
+import { db } from "@/db";
+import { emailSettings } from "@/db/schema";
+
 // import formData from 'form-data';
 // import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 // import sgMail from '@sendgrid/mail';
@@ -48,7 +50,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       .limit(1);
 
     if (!emailConfig) {
-      throw new Error('No active email configuration found');
+      throw new Error("No active email configuration found");
     }
 
     const providerType = emailConfig.providerType;
@@ -56,7 +58,9 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
     // Validar los parámetros básicos requeridos
     if (!options.to || !options.subject || !options.html) {
-      throw new Error('Missing required email parameters: to, subject, or html');
+      throw new Error(
+        "Missing required email parameters: to, subject, or html"
+      );
     }
 
     // Preparar opciones con valores por defecto
@@ -64,59 +68,70 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       ...options,
       from: {
         name: options.from?.name || emailConfig.defaultFromName,
-        email: options.from?.email || emailConfig.defaultFromEmail
+        email: options.from?.email || emailConfig.defaultFromEmail,
       },
-      replyTo: options.replyTo || emailConfig.defaultReplyTo || emailConfig.defaultFromEmail,
+      replyTo:
+        options.replyTo ||
+        emailConfig.defaultReplyTo ||
+        emailConfig.defaultFromEmail,
       trackOpens: options.trackOpens !== undefined ? options.trackOpens : true,
-      trackClicks: options.trackClicks !== undefined ? options.trackClicks : true
+      trackClicks:
+        options.trackClicks !== undefined ? options.trackClicks : true,
     };
 
     // Enviar email según el proveedor configurado
     let result: EmailResult;
 
     switch (providerType) {
-      case 'smtp':
+      case "smtp":
         result = await sendViaSmtp(emailOptions, providerConfig);
         break;
-      
+
       // case 'sendgrid':
       //   result = await sendViaSendgrid(emailOptions, providerConfig);
       //   break;
-      
+
       // case 'ses':
       //   result = await sendViaSes(emailOptions, providerConfig);
       //   break;
-      
+
       // case 'mailgun':
       //   result = await sendViaMailgun(emailOptions, providerConfig);
       //   break;
-      
+
       default:
         throw new Error(`Unsupported email provider: ${providerType}`);
     }
 
     if (result.success) {
-      console.info('Email sent successfully', {
+      console.info("Email sent successfully", {
         provider: providerType,
-        to: typeof emailOptions.to === 'string' ? emailOptions.to : emailOptions.to.join(', '),
+        to:
+          typeof emailOptions.to === "string"
+            ? emailOptions.to
+            : emailOptions.to.join(", "),
         subject: emailOptions.subject,
-        messageId: result.messageId
+        messageId: result.messageId,
       });
     } else {
-      console.error('Failed to send email', {
+      console.error("Failed to send email", {
         provider: providerType,
         error: result.error,
-        to: typeof emailOptions.to === 'string' ? emailOptions.to : emailOptions.to.join(', '),
-        subject: emailOptions.subject
+        to:
+          typeof emailOptions.to === "string"
+            ? emailOptions.to
+            : emailOptions.to.join(", "),
+        subject: emailOptions.subject,
       });
     }
 
     return result;
   } catch (error) {
-    console.error('Error in email sender service', { error });
+    console.error("Error in email sender service", { error });
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown email sender error'
+      error:
+        error instanceof Error ? error.message : "Unknown email sender error",
     };
   }
 }
@@ -165,7 +180,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 //     // Añadir attachments si existen
 //     if (options.attachments && options.attachments.length > 0) {
 //       const attachments: any[] = [];
-      
+
 //       options.attachments.forEach(attachment => {
 //         attachments.push({
 //           filename: attachment.filename,
@@ -173,14 +188,14 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 //           contentType: attachment.contentType
 //         });
 //       });
-      
+
 //       // @ts-ignore - Mailgun tiene tipos incompletos
 //       message.attachment = attachments;
 //     }
 
 //     // Enviar email
 //     const response = await mg.messages.create(config.domain, message);
-    
+
 //     return {
 //       success: true,
 //       messageId: response.id,
@@ -197,17 +212,20 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 /**
  * Envía email a través de SMTP (nodemailer)
  */
-async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): Promise<EmailResult> {
+async function sendViaSmtp(
+  options: EmailOptions,
+  config: Record<string, any>
+): Promise<EmailResult> {
   try {
     // Validar configuración SMTP
-    const requiredFields = ['host', 'port', 'username', 'password'];
+    const requiredFields = ["host", "port", "username", "password"];
     for (const field of requiredFields) {
       if (!config[field]) {
         throw new Error(`Missing SMTP configuration: ${field}`);
       }
     }
 
-    console.log('sendViaSmtp config:', config);
+    console.log("sendViaSmtp config:", config);
 
     // Crear transporter con retry
     const transporter = nodemailer.createTransport({
@@ -216,14 +234,14 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
       secure: true,
       auth: {
         user: config.username,
-        pass: config.password
+        pass: config.password,
       },
       // Reintentar envíos fallidos
       pool: true,
       maxConnections: 5,
       maxMessages: 100,
       rateDelta: 1000,
-      rateLimit: 10
+      rateLimit: 10,
     });
 
     // Verificar conexión
@@ -232,34 +250,40 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
     // Preparar opciones de email
     const mailOptions = {
       from: `"${options.from.name}" <${options.from.email}>`,
-      to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+      to: Array.isArray(options.to) ? options.to.join(", ") : options.to,
       subject: options.subject,
       html: options.html,
-      text: options.text || '',
+      text: options.text || "",
       replyTo: options.replyTo || options.from.email,
       attachments: options.attachments || [],
       // Añadir cabeceras de seguimiento si es necesario
       headers: {
-        'X-Entity-Ref-ID': options.metadata?.messageId || Date.now().toString(),
-        ...(options.metadata ? Object.entries(options.metadata).reduce((acc, [key, value]) => {
-          acc[`X-Metadata-${key}`] = typeof value === 'string' ? value : JSON.stringify(value);
-          return acc;
-        }, {} as Record<string, string>) : {})
-      }
+        "X-Entity-Ref-ID": options.metadata?.messageId || Date.now().toString(),
+        ...(options.metadata
+          ? Object.entries(options.metadata).reduce(
+              (acc, [key, value]) => {
+                acc[`X-Metadata-${key}`] =
+                  typeof value === "string" ? value : JSON.stringify(value);
+                return acc;
+              },
+              {} as Record<string, string>
+            )
+          : {}),
+      },
     };
 
     // Enviar email
     const info = await transporter.sendMail(mailOptions);
-    
+
     return {
       success: true,
       messageId: info.messageId,
-      providerResponse: info
+      providerResponse: info,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown SMTP error'
+      error: error instanceof Error ? error.message : "Unknown SMTP error",
     };
   }
 }
@@ -280,7 +304,7 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
 //     const msg = {
 //       to: options.to,
 //       from: {
-//         email: options.from.email, 
+//         email: options.from.email,
 //         name: options.from.name
 //       },
 //       subject: options.subject,
@@ -297,8 +321,8 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
 //       },
 //       attachments: options.attachments ? options.attachments.map(att => ({
 //         filename: att.filename,
-//         content: Buffer.isBuffer(att.content) 
-//           ? att.content.toString('base64') 
+//         content: Buffer.isBuffer(att.content)
+//           ? att.content.toString('base64')
 //           : Buffer.from(att.content).toString('base64'),
 //         type: att.contentType,
 //         disposition: 'attachment'
@@ -308,7 +332,7 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
 
 //     // Enviar email
 //     const response = await sgMail.send(msg);
-    
+
 //     return {
 //       success: true,
 //       messageId: response[0]?.headers['x-message-id'] || 'unknown',
@@ -317,11 +341,11 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
 //   } catch (error) {
 //     return {
 //       success: false,
-//       error: error instanceof Error 
-//         ? error.message 
+//       error: error instanceof Error
+//         ? error.message
 //         : (
-//           typeof error === 'object' && error !== null && 'response' in error 
-//             ? (error as any).response?.body 
+//           typeof error === 'object' && error !== null && 'response' in error
+//             ? (error as any).response?.body
 //             : 'Unknown SendGrid error'
 //         )
 //     };
@@ -383,7 +407,7 @@ async function sendViaSmtp(options: EmailOptions, config: Record<string, any>): 
 //     // Enviar email
 //     const command = new SendEmailCommand(params);
 //     const response = await sesClient.send(command);
-    
+
 //     return {
 //       success: true,
 //       messageId: response.MessageId,

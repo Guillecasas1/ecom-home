@@ -1,41 +1,54 @@
-import { db } from '@/db';
-import { automationSteps, emailAutomations, emailTemplates, subscribers } from '@/db/schema';
-import { WoocommerceOrder } from '@/types/woocommerce';
-import { env } from '@/utils/env/server';
-import crypto from 'crypto';
-import { eq } from 'drizzle-orm';
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-export async function POST (request: Request) {
+import crypto from "crypto";
+import { eq } from "drizzle-orm";
+
+import { db } from "@/db";
+import {
+  automationSteps,
+  emailAutomations,
+  emailTemplates,
+  subscribers,
+} from "@/db/schema";
+import { WoocommerceOrder } from "@/types/woocommerce";
+import { env } from "@/utils/env/server";
+
+export async function POST(request: Request) {
   const clonedRequest = request.clone();
 
   try {
     // Verificar firma del webhook (importante para seguridad)
-    const signature = request.headers.get('x-wc-webhook-signature');
+    const signature = request.headers.get("x-wc-webhook-signature");
     const rawBody = await clonedRequest.text();
 
     if (!validateWooCommerceSignature(signature, rawBody)) {
-      console.warn('Invalid webhook signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      console.warn("Invalid webhook signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    const data = await request.json() as WoocommerceOrder;
+    const data = (await request.json()) as WoocommerceOrder;
 
     // Verificar si el estado del pedido cambió a "completed"
-    if (data.status !== 'completed') {
-      return NextResponse.json({ status: 'ignored', reason: 'Order not completed' });
+    if (data.status !== "completed") {
+      return NextResponse.json({
+        status: "ignored",
+        reason: "Order not completed",
+      });
     }
 
     // Obtener la plantilla de "Review Reminder"
     const [followupTemplate] = await db
       .select()
       .from(emailTemplates)
-      .where(eq(emailTemplates.name, 'Review reminder'));
+      .where(eq(emailTemplates.name, "Review reminder"));
 
     if (!followupTemplate) {
       console.error('Email template "Seguimiento post-compra" not found');
       return NextResponse.json(
-        { error: 'Email template not found', hint: 'Create a template named "Seguimiento post-compra"' },
+        {
+          error: "Email template not found",
+          hint: 'Create a template named "Seguimiento post-compra"',
+        },
         { status: 200 }
       );
     }
@@ -45,7 +58,7 @@ export async function POST (request: Request) {
       return NextResponse.json({ error: result.error }, { status: 200 });
     }
 
-    const delayDays = env.NODE_ENV === 'development' ? 0 : 15;
+    const delayDays = env.NODE_ENV === "development" ? 0 : 15;
 
     // Crear la automatización
     const automationResult = await createFollowupAutomation({
@@ -54,63 +67,71 @@ export async function POST (request: Request) {
       customerEmail: data.billing.email!,
       customerName: `${data.billing.first_name} ${data.billing.last_name}`,
       templateId: followupTemplate.id,
-      delayDays
+      delayDays,
     });
 
     if (!automationResult.success) {
-      return NextResponse.json({ error: automationResult.error }, { status: 200 });
+      return NextResponse.json(
+        { error: automationResult.error },
+        { status: 200 }
+      );
     }
 
-    console.log('Follow-up email scheduled', {
+    console.log("Follow-up email scheduled", {
       orderId: data.id,
-      scheduledDate: automationResult.scheduledDate
+      scheduledDate: automationResult.scheduledDate,
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Follow-up email scheduled',
+      message: "Follow-up email scheduled",
       details: {
         orderId: data.id,
         scheduledDate: automationResult.scheduledDate,
-        automationId: automationResult.automationId
-      }
+        automationId: automationResult.automationId,
+      },
     });
-
   } catch (error) {
-    console.error('Error processing WooCommerce webhook:', error);
-    return NextResponse.json({ message: 'Error' }, { status: 200 });
+    console.error("Error processing WooCommerce webhook:", error);
+    return NextResponse.json({ message: "Error" }, { status: 200 });
   }
 }
 
 // Función para validar la firma del webhook
-function validateWooCommerceSignature (signature: string | null, payload: string): boolean {
+function validateWooCommerceSignature(
+  signature: string | null,
+  payload: string
+): boolean {
   if (!signature || !process.env.WOOCOMMERCE_WEBHOOK_SECRET) {
-    console.warn('Missing webhook signature or secret');
+    console.warn("Missing webhook signature or secret");
     return false;
   }
 
   try {
-    const hmac = crypto.createHmac('sha256', process.env.WOOCOMMERCE_WEBHOOK_SECRET);
-    const calculatedSignature = hmac.update(payload).digest('base64');
+    const hmac = crypto.createHmac(
+      "sha256",
+      process.env.WOOCOMMERCE_WEBHOOK_SECRET
+    );
+    const calculatedSignature = hmac.update(payload).digest("base64");
 
     return crypto.timingSafeEqual(
       Buffer.from(signature),
       Buffer.from(calculatedSignature)
     );
   } catch (error) {
-    console.error('Error validating webhook signature', { error });
+    console.error("Error validating webhook signature", { error });
     return false;
   }
 }
 
 // Función para calcular una fecha futura con un delay en días
-function calculateDateAfterDelay (days: number): Date {
+function calculateDateAfterDelay(days: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date;
 }
 
-async function processSubscriber (data: WoocommerceOrder): Promise<{
+async function processSubscriber(data: WoocommerceOrder): Promise<{
   success: boolean;
   subscriberId?: number;
   error?: string;
@@ -138,14 +159,14 @@ async function processSubscriber (data: WoocommerceOrder): Promise<{
             lastOrderId: data.id,
             lastOrderDate: data.date_completed,
             lastOrderTotal: data.total,
-            ...(existingSubscriber.customAttributes || {})
-          }
+            ...(existingSubscriber.customAttributes || {}),
+          },
         })
         .where(eq(subscribers.id, existingSubscriber.id));
 
       return {
         success: true,
-        subscriberId: existingSubscriber.id
+        subscriberId: existingSubscriber.id,
       };
     } else {
       // Crear nuevo suscriptor
@@ -156,30 +177,36 @@ async function processSubscriber (data: WoocommerceOrder): Promise<{
           firstName: data.billing.first_name,
           lastName: data.billing.last_name,
           phone: data.billing.phone,
-          source: 'woocommerce_order',
+          source: "woocommerce_order",
           customAttributes: {
             lastOrderId: data.id,
             lastOrderDate: data.date_completed,
-            lastOrderTotal: data.total
-          }
+            lastOrderTotal: data.total,
+          },
         })
         .returning({ id: subscribers.id });
 
       return {
         success: true,
-        subscriberId: newSubscriber.id
+        subscriberId: newSubscriber.id,
       };
     }
   } catch (error) {
-    console.error('Error processing subscriber', { error, email: data.billing.email });
+    console.error("Error processing subscriber", {
+      error,
+      email: data.billing.email,
+    });
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error processing subscriber'
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error processing subscriber",
     };
   }
 }
 
-async function createFollowupAutomation (params: {
+async function createFollowupAutomation(params: {
   orderId: number;
   subscriberId: number;
   customerEmail: string;
@@ -198,33 +225,33 @@ async function createFollowupAutomation (params: {
     // Transacción para asegurar que ambas operaciones (automatización y paso) se realicen juntas
     const result = await db.transaction(async (tx) => {
       // Crear la automatización
-      const [newAutomation] = await tx.insert(emailAutomations)
+      const [newAutomation] = await tx
+        .insert(emailAutomations)
         .values({
           name: `Seguimiento Pedido #${params.orderId}`,
           description: `Email automático ${params.delayDays} días después de completar el pedido #${params.orderId}`,
-          triggerType: 'order_completed',
+          triggerType: "order_completed",
           triggerSettings: {
             orderId: params.orderId,
             scheduledDate: scheduledDate.toISOString(),
             customerEmail: params.customerEmail,
             subscriberId: params.subscriberId,
-            customerName: params.customerName
+            customerName: params.customerName,
           },
-          isActive: true
+          isActive: true,
         })
         .returning({ id: emailAutomations.id });
 
       // Crear el paso de la automatización (el email a enviar)
-      await tx.insert(automationSteps)
-        .values({
-          automationId: newAutomation.id,
-          stepOrder: 1,
-          stepType: 'send_email',
-          templateId: params.templateId,
-          subject: `¿Qué tal tu experiencia con tu compra en Nuestra Tienda?`,
-          waitDuration: params.delayDays * 24 * 60, // convertir días a minutos
-          isActive: true
-        });
+      await tx.insert(automationSteps).values({
+        automationId: newAutomation.id,
+        stepOrder: 1,
+        stepType: "send_email",
+        templateId: params.templateId,
+        subject: `¿Qué tal tu experiencia con tu compra en Nuestra Tienda?`,
+        waitDuration: params.delayDays * 24 * 60, // convertir días a minutos
+        isActive: true,
+      });
 
       return { automationId: newAutomation.id };
     });
@@ -232,14 +259,19 @@ async function createFollowupAutomation (params: {
     return {
       success: true,
       automationId: result.automationId,
-      scheduledDate
+      scheduledDate,
     };
-
   } catch (error) {
-    console.error('Error creating followup automation', { error, orderId: params.orderId });
+    console.error("Error creating followup automation", {
+      error,
+      orderId: params.orderId,
+    });
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error creating automation'
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error creating automation",
     };
   }
 }

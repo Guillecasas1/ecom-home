@@ -1,4 +1,4 @@
-import { ThemeSwitcher } from "@/components/theme-switcher"
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,16 +6,20 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger
-} from "@/components/ui/sidebar"
-import { AdminSidebar } from "@/modules/admin/ui/components/admin-sidebar"
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/modules/admin/ui/components/admin-sidebar";
 
-export default async function RootLayout ({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SidebarProvider>
       <AdminSidebar />
@@ -43,5 +47,5 @@ export default async function RootLayout ({ children }: { children: React.ReactN
         {children}
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

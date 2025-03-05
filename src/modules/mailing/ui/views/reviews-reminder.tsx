@@ -3,7 +3,7 @@ import { ScheduledMailsList } from "../sections/scheduled-mails-list";
 
 export const ReviewsReminderView = () => {
   return (
-    <div className="flex flex-col px-8 gap-6">
+    <div className="flex flex-col gap-6 px-8">
       <ReviewsReminderHeader />
       <ScheduledMailsList />
     </div>

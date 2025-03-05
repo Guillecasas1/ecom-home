@@ -28,7 +28,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 }
 
-export function DataTable<TData, TValue> ({
+export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -51,7 +51,7 @@ export function DataTable<TData, TValue> ({
     <div>
       <div className="overflow-hidden rounded-md border">
         <Table>
-          <TableHeader className="bg-neutral-50 hover:bg-neutral-50 dark:bg-background dark:hover:bg-card">
+          <TableHeader className="dark:bg-background dark:hover:bg-card bg-neutral-50 hover:bg-neutral-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -60,9 +60,9 @@ export function DataTable<TData, TValue> ({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -75,7 +75,7 @@ export function DataTable<TData, TValue> ({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="bg-white hover:bg-neutral-50 dark:bg-background dark:hover:bg-card"
+                  className="dark:bg-background dark:hover:bg-card bg-white hover:bg-neutral-50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-2.5">

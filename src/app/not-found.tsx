@@ -1,8 +1,8 @@
-
-import { Card, CardContent } from "@/components/ui/card";
 import { IconFileUnknown } from "@tabler/icons-react";
 
-export default function NotFound () {
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function NotFound() {
   return (
     <Card className="mx-auto mt-4 max-w-md">
       <CardContent>

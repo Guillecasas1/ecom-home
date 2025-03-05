@@ -10,9 +10,9 @@ export const DataTableSkeleton = () => {
       </div> */}
 
       {/* Tabla */}
-      <div className="rounded-md border overflow-hidden">
+      <div className="overflow-hidden rounded-md border">
         {/* Header de columnas */}
-        <div className="border-b bg-slate-50 dark:bg-black p-4">
+        <div className="border-b bg-slate-50 p-4 dark:bg-black">
           <div className="flex gap-4">
             <Skeleton className="h-4 w-[100px]" />
             <Skeleton className="h-4 w-[100px]" />
@@ -45,4 +45,4 @@ export const DataTableSkeleton = () => {
       </div>
     </div>
   );
-}; 
+};
