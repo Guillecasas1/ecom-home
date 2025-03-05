@@ -1,15 +1,16 @@
-import { Card, CardBody } from "@nextui-org/react";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { IconFileUnknown } from "@tabler/icons-react";
 
-export default function NotFound() {
+export default function NotFound () {
   return (
     <Card className="mx-auto mt-4 max-w-md">
-      <CardBody>
+      <CardContent>
         <p className="flex items-center justify-center gap-2 text-2xl">
           <IconFileUnknown />
           This page cannot be found.
         </p>
-      </CardBody>
+      </CardContent>
     </Card>
   );
 }
