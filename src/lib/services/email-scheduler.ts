@@ -128,7 +128,10 @@ export async function processScheduledEmails () {
           // Desactivar la automatización ya que se ejecutó correctamente
           await db
             .update(emailAutomations)
-            .set({ isActive: false })
+            .set({
+              status: "completed",
+              isActive: false
+            })
             .where(eq(emailAutomations.id, automation.id));
 
           console.info(
