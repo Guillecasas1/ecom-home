@@ -13,7 +13,7 @@ import {
 import { WoocommerceOrder } from "@/types/woocommerce";
 import { env } from "@/utils/env/server";
 
-export async function POST(request: Request) {
+export async function POST (request: Request) {
   const clonedRequest = request.clone();
 
   try {
@@ -43,11 +43,11 @@ export async function POST(request: Request) {
       .where(eq(emailTemplates.name, "Review reminder"));
 
     if (!followupTemplate) {
-      console.error('Email template "Seguimiento post-compra" not found');
+      console.error("Email template 'Seguimiento post-compra' not found");
       return NextResponse.json(
         {
           error: "Email template not found",
-          hint: 'Create a template named "Seguimiento post-compra"',
+          hint: "Create a template named 'Seguimiento post-compra'",
         },
         { status: 200 }
       );
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 }
 
 // Función para validar la firma del webhook
-function validateWooCommerceSignature(
+function validateWooCommerceSignature (
   signature: string | null,
   payload: string
 ): boolean {
@@ -125,13 +125,13 @@ function validateWooCommerceSignature(
 }
 
 // Función para calcular una fecha futura con un delay en días
-function calculateDateAfterDelay(days: number): Date {
+function calculateDateAfterDelay (days: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date;
 }
 
-async function processSubscriber(data: WoocommerceOrder): Promise<{
+async function processSubscriber (data: WoocommerceOrder): Promise<{
   success: boolean;
   subscriberId?: number;
   error?: string;
@@ -206,7 +206,7 @@ async function processSubscriber(data: WoocommerceOrder): Promise<{
   }
 }
 
-async function createFollowupAutomation(params: {
+async function createFollowupAutomation (params: {
   orderId: number;
   subscriberId: number;
   customerEmail: string;
@@ -238,6 +238,7 @@ async function createFollowupAutomation(params: {
             subscriberId: params.subscriberId,
             customerName: params.customerName,
           },
+          status: "pending",
           isActive: true,
         })
         .returning({ id: emailAutomations.id });
