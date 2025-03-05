@@ -20,9 +20,9 @@ export const ReviewsReminderHeader = () => {
             </p>
           </div>
           <div className="justify-self-end">
-            <Button onClick={() => {}}>
+            <Button onClick={() => { }}>
               <IconSettings />
-              Settings
+              Ajustes generales
             </Button>
           </div>
         </div>

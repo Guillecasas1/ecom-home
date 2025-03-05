@@ -7,6 +7,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { DataTableSkeleton } from "@/components/table-skeleton";
 import { trpc } from "@/trpc/client";
 
+import { Automation } from "../../types";
 import { DataTable } from "../components/scheduled-mails-table/table";
 import { emailAutomationsListColumns } from "../components/scheduled-mails-table/table-columns";
 
@@ -24,5 +25,6 @@ export const ScheduledMailsList = () => {
 
 export const ScheduledMailsListSuspense = () => {
   const [data] = trpc.reviews.getMany.useSuspenseQuery();
-  return <DataTable columns={emailAutomationsListColumns} data={data} />;
+  const automations = data as Automation[];
+  return <DataTable columns={emailAutomationsListColumns} data={automations} />;
 };

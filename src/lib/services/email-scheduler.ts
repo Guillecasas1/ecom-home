@@ -11,66 +11,8 @@ import {
   subscribers,
 } from "@/db/schema";
 import { sendEmail } from "@/lib/services/email-sender";
+import type { Automation, EmailConfig, Step, Template, TriggerSettings } from "@/modules/mailing/types";
 
-// Tipos para triggerSettings
-type OrderCompletedTrigger = {
-  scheduledDate: string;
-  orderId: number;
-  customerEmail: string;
-  subscriberId: number;
-  customerName?: string;
-};
-
-type Step = {
-  id: number;
-  isActive: boolean;
-  automationId: number;
-  stepOrder: number;
-  stepType: string;
-  subject: string | null;
-  content: string | null;
-  templateId: number | null;
-  waitDuration: number | null;
-  conditions: unknown;
-}
-
-type Automation = {
-  id: number;
-  name: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  description: string | null;
-  triggerType: string;
-  triggerSettings: unknown;
-  status: string;
-}
-
-type Template = {
-  id: number;
-  name: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  subject: string;
-  content: string;
-  previewText: string | null;
-  category: string | null;
-  metadata: unknown;
-}
-
-type EmailConfig = {
-  id: number;
-  providerType: string;
-  providerConfig: unknown;
-  defaultFromName: string;
-  defaultFromEmail: string;
-  defaultReplyTo: string | null;
-  sendLimit: number | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 /**
  * Procesa los emails programados y los envía cuando sea el momento
@@ -98,9 +40,10 @@ export async function processScheduledEmails () {
       .where(
         and(
           eq(emailAutomations.isActive, true),
-          eq(emailAutomations.triggerType, "order_completed")
+          eq(emailAutomations.triggerType, "order_completed"),
+          eq(emailAutomations.status, "pending")
         )
-      );
+      ) as Automation[];
 
     console.info(
       `Found ${activeAutomations.length} active automations to process`
@@ -117,7 +60,7 @@ export async function processScheduledEmails () {
       try {
         // Verificar si la fecha programada ya pasó
         const triggerSettings =
-          automation.triggerSettings as OrderCompletedTrigger;
+          automation.triggerSettings as TriggerSettings;
 
         if (!triggerSettings || !triggerSettings.scheduledDate) {
           console.warn("Automation has invalid trigger settings", {
@@ -224,7 +167,7 @@ async function prepareAndSendEmail (
   automation: Automation,
   step: Step,
   template: Template | null,
-  triggerSettings: OrderCompletedTrigger,
+  triggerSettings: TriggerSettings,
   emailConfig: EmailConfig
 ): Promise<{ success: boolean; error?: unknown }> {
   try {

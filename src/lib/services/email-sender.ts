@@ -4,39 +4,13 @@ import nodemailer from "nodemailer";
 
 import { db } from "@/db";
 import { emailSettings } from "@/db/schema";
+import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 
 // import formData from 'form-data';
 // import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 // import sgMail from '@sendgrid/mail';
 // import Mailgun from 'mailgun.js';
 
-export type EmailOptions = {
-  to: string | string[];
-  subject: string;
-  html: string;
-  text?: string;
-  from: {
-    name: string;
-    email: string;
-  };
-  replyTo?: string;
-  attachments?: Array<{
-    filename: string;
-    content: Buffer | string;
-    contentType?: string;
-  }>;
-  // eslint-disable-next-line
-  metadata?: Record<string, any>;
-  trackOpens?: boolean;
-  trackClicks?: boolean;
-};
-
-export type EmailResult = {
-  success: boolean;
-  messageId?: string;
-  providerResponse?: unknown;
-  error?: unknown;
-};
 
 /**
  * Envía un email utilizando el proveedor configurado

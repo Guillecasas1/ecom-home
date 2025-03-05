@@ -12,21 +12,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { SwitchCell } from "./switch-cell";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Automation } from "@/modules/mailing/types";
+import { EditDialog } from "./edit-modal";
+import { ToggleStatusButton } from "./toggle-status-button";
 
-type EmailAutomation = {
-  id: number;
-  name: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  description: string | null;
-  triggerType: string;
-  triggerSettings: unknown;
-  status: string;
-};
-
-export const emailAutomationsListColumns: ColumnDef<EmailAutomation>[] = [
+export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -93,20 +84,20 @@ export const emailAutomationsListColumns: ColumnDef<EmailAutomation>[] = [
       );
     },
   },
-  {
-    accessorKey: "is_active",
-    header: () => {
-      return (
-        <div className="w-full text-right">
-          <span>Is active</span>
-        </div>
-      );
-    },
-    cell: ({ row }) => {
-      const automation = row.original;
-      return <SwitchCell id={automation.id} isActive={automation.isActive} />;
-    },
-  },
+  // {
+  //   accessorKey: "is_active",
+  //   header: () => {
+  //     return (
+  //       <div className="w-full text-right">
+  //         <span>Is active</span>
+  //       </div>
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const automation = row.original;
+  //     return <SwitchCell id={automation.id} isActive={automation.isActive} />;
+  //   },
+  // },
   {
     id: "actions",
     header: () => {
@@ -117,36 +108,40 @@ export const emailAutomationsListColumns: ColumnDef<EmailAutomation>[] = [
       );
     },
     cell: ({ row }) => {
-      const wallet = row.original;
+      const isMobile = useIsMobile();
+      const automation = row.original;
 
       return (
         <div className="w-full pr-2 text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  navigator.clipboard.writeText(wallet.id.toString())
-                }
-              >
-                Copiar ID de wallet
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <a
-                  className="w-full"
-                  href={`/dashboard/wallet-tracker/${wallet.id}`}
-                >
-                  Editar
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!isMobile ? (
+            <>
+              <ToggleStatusButton id={automation.id} status={automation.status} />
+              <EditDialog automation={automation} />
+            </>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  {automation.status === "paused" ? "Iniciar automatización" : "Pausar automatización"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <a
+                    className="w-full"
+                    href={`/dashboard/email-automations/${automation.id}`}
+                  >
+                    Editar
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       );
     },

@@ -8,7 +8,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createSelectSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import automationSteps from "./automations-stepts";
 
@@ -31,7 +31,9 @@ export const emailAutomationsRelations = relations(
   })
 );
 
-export const emailAutomationsSelectSchema =
+export const emailAutomationSelectSchema =
   createSelectSchema(emailAutomations);
+export const emailAutomationInsertSchema =
+  createInsertSchema(emailAutomations);
 
 export default emailAutomations;
