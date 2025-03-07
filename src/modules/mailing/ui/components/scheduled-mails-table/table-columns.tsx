@@ -15,6 +15,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Automation } from "@/modules/mailing/types";
 import { EditDialog } from "./edit-modal";
+import { SendNowButton } from "./send-now-btn";
 import { ToggleStatusButton } from "./toggle-status-button";
 
 export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
@@ -117,6 +118,7 @@ export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
             <>
               <ToggleStatusButton id={automation.id} status={automation.status} />
               <EditDialog automation={automation} />
+              <SendNowButton id={automation.id} status={automation.status} />
             </>
           ) : (
             <DropdownMenu>
@@ -127,17 +129,28 @@ export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                {automation.status === "pending" && (
+                  <DropdownMenuItem
+                    onClick={() => { }}
+                    className="cursor-pointer"
+                  >
+                    {/* {isProcessing ? "Procesando..." : "Enviar ahora"} */}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={() => { }}
+                  className="cursor-pointer"
+                >
                   {automation.status === "paused" ? "Iniciar automatización" : "Pausar automatización"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <a
-                    className="w-full"
-                    href={`/dashboard/email-automations/${automation.id}`}
-                  >
-                    Editar
-                  </a>
+                <DropdownMenuItem
+                  onClick={() => {
+                    document.getElementById(`edit-dialog-trigger-${automation.id}`)?.click();
+                  }}
+                  className="cursor-pointer"
+                >
+                  Editar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

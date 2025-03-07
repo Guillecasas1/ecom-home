@@ -31,6 +31,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Automation } from "@/modules/mailing/types";
 import { format } from "date-fns";
@@ -48,11 +54,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const EditDialog = ({
-  automation,
-}: {
+interface EditDialogProps {
   automation: Automation;
-}) => {
+};
+
+export const EditDialog = ({ automation }: EditDialogProps) => {
   const [open, setOpen] = useState(false);
   const utils = trpc.useUtils();
 
@@ -86,11 +92,20 @@ export const EditDialog = ({
     // Preparar los datos para la actualización
     const { scheduledDate } = values;
 
-    // Preparar triggerSettings manteniendo los valores originales pero actualizando la fecha
-    const updatedTriggerSettings = {
-      ...automation.triggerSettings,
-      scheduledDate: scheduledDate ? scheduledDate.toISOString() : automation.triggerSettings.scheduledDate,
-    };
+    // Verificar si la fecha ha cambiado para mejorar rendimiento
+    const currentDate = automation.triggerSettings?.scheduledDate
+      ? new Date(automation.triggerSettings.scheduledDate).toISOString()
+      : null;
+    const newDate = scheduledDate ? scheduledDate.toISOString() : null;
+    const dateHasChanged = currentDate !== newDate;
+
+    // Preparar triggerSettings manteniendo los valores originales pero actualizando la fecha si cambió
+    const updatedTriggerSettings = dateHasChanged
+      ? {
+        ...automation.triggerSettings,
+        scheduledDate: newDate || automation.triggerSettings.scheduledDate,
+      }
+      : automation.triggerSettings;
 
     updateAutomation.mutate({
       id: automation.id,
@@ -105,15 +120,24 @@ export const EditDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          size="icon"
-          className="text-blue-400"
-          variant="outline"
-          onClick={() => setOpen(true)}
-          id={`edit-dialog-trigger-${automation.id}`}
-        >
-          <IconEdit size={18} />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                className="text-blue-400 mr-2"
+                variant="outline"
+                onClick={() => setOpen(true)}
+                id={`edit-dialog-trigger-${automation.id}`}
+              >
+                <IconEdit size={18} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Editar automatización</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -156,7 +180,6 @@ export const EditDialog = ({
               )}
             />
 
-            {/* Campo para la fecha de envío programada */}
             {automation.triggerType === "order_completed" && (
               <FormField
                 control={form.control}

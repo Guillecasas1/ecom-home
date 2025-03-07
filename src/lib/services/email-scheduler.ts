@@ -166,7 +166,7 @@ export async function processScheduledEmails () {
 /**
  * Prepara y envía un email basado en una automatización
  */
-async function prepareAndSendEmail (
+export async function prepareAndSendEmail (
   automation: Automation,
   step: Step,
   template: Template | null,
@@ -189,12 +189,11 @@ async function prepareAndSendEmail (
 
     // Preparar el contenido del email
     let emailContent = "";
-    let emailSubject = step.subject || "";
+    let emailSubject = template?.subject || step.subject || "";
 
     // Si el paso tiene una plantilla asociada, usarla
     if (template) {
       emailContent = template.content;
-      if (!emailSubject) emailSubject = template.subject;
     }
     // Si no hay plantilla pero hay contenido directo en el paso
     else if (step.content) {

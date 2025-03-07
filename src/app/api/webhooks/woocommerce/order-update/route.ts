@@ -249,7 +249,7 @@ async function createFollowupAutomation (params: {
         stepOrder: 1,
         stepType: "send_email",
         templateId: params.templateId,
-        subject: "¿Qué tal tu experiencia con tu compra en La Batita Presumida?",
+        subject: "👩‍🏫 ¡Seño, necesitamos tu nota final! 📢",
         waitDuration: params.delayDays * 24 * 60, // convertir días a minutos
         isActive: true,
       });

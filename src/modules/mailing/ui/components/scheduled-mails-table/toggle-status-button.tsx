@@ -2,6 +2,13 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/trpc/client";
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 export const ToggleStatusButton = ({
   id,
   status
@@ -27,14 +34,24 @@ export const ToggleStatusButton = ({
   };
 
   return (
-    <Button
-      size="icon"
-      variant="outline"
-      onClick={handleClick}
-      className={`mr-2 hover:cursor-pointer ${isPaused ? "text-green-500" : "text-red-400"}`}
-      title={isPaused ? "Iniciar automatización" : "Pausar automatización"}
-    >
-      {isPaused ? <IconPlayerPlay /> : <IconPlayerPause />}
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handleClick}
+            className={`mr-2 hover:cursor-pointer ${isPaused ? "text-green-500" : "text-red-400"}`}
+            title={isPaused ? "Iniciar automatización" : "Pausar automatización"}
+          >
+            {isPaused ? <IconPlayerPlay /> : <IconPlayerPause />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{isPaused ? "Iniciar automatización" : "Pausar automatización"}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
   );
 }
