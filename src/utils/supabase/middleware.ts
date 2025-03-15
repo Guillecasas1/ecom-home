@@ -4,20 +4,18 @@ import { createServerClient } from "@supabase/ssr";
 
 import { env } from "@/utils/env/server";
 
-export async function updateSession (request: NextRequest) {
+export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
 
   const supabase = createServerClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     cookies: {
-      getAll () {
+      getAll() {
         return request.cookies.getAll();
       },
-      setAll (cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
         supabaseResponse = NextResponse.next({
           request,
         });

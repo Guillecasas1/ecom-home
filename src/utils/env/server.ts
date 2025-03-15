@@ -16,10 +16,7 @@ export const env = createEnv({
     WOOCOMMERCE_WEBHOOK_SECRET: z.string(),
   },
   onValidationError: (error: ZodError) => {
-    console.error(
-      "❌ Invalid environment variables:",
-      error.flatten().fieldErrors
-    );
+    console.error("❌ Invalid environment variables:", error.flatten().fieldErrors);
     throw new Error("Invalid environment variables. Check server logs for details.");
   },
   emptyStringAsUndefined: true,

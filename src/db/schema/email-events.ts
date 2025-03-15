@@ -1,13 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  integer,
-  jsonb,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 import emailSends from "./email-sends";
 

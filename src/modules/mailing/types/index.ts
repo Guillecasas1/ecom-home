@@ -4,7 +4,7 @@ export type TriggerSettings = {
   customerEmail: string;
   subscriberId: number;
   customerName?: string;
-}
+};
 
 export type EmailOptions = {
   to: string | string[];
@@ -45,7 +45,7 @@ export type Step = {
   templateId: number | null;
   waitDuration: number | null;
   conditions: unknown;
-}
+};
 
 export type Automation = {
   id: number;
@@ -57,7 +57,7 @@ export type Automation = {
   triggerType: string;
   triggerSettings: TriggerSettings;
   status: string;
-}
+};
 
 export type Template = {
   id: number;
@@ -70,7 +70,7 @@ export type Template = {
   previewText: string | null;
   category: string | null;
   metadata: unknown;
-}
+};
 
 export type EmailConfig = {
   id: number;
@@ -83,4 +83,4 @@ export type EmailConfig = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
+};

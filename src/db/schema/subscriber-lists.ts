@@ -1,13 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  boolean,
-  integer,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 import emailCampaigns from "./email-campaigns";
 import subscribers from "./subscribers";
@@ -24,12 +16,9 @@ const subscriberLists = pgTable("subscriber_lists", {
   isActive: boolean("is_active").default(true).notNull(),
 });
 
-export const subscriberListsRelations = relations(
-  subscriberLists,
-  ({ many }) => ({
-    subscribers: many(subscribers),
-    campaigns: many(emailCampaigns),
-  })
-);
+export const subscriberListsRelations = relations(subscriberLists, ({ many }) => ({
+  subscribers: many(subscribers),
+  campaigns: many(emailCampaigns),
+}));
 
 export default subscriberLists;

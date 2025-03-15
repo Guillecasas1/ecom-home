@@ -12,12 +12,7 @@ export const metadata: Metadata = {
   description: "La Batita Presumida ERP",
 };
 
-export default async function RootLayout({
-  children,
-  ...props
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children, ...props }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <body>

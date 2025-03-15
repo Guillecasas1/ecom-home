@@ -1,12 +1,4 @@
-import {
-  boolean,
-  integer,
-  jsonb,
-  pgTable,
-  serial,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 
 // Tabla de configuración del servicio de email
 const emailSettings = pgTable("email_settings", {

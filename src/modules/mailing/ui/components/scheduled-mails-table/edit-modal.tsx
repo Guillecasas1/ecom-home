@@ -1,7 +1,10 @@
-import { trpc } from "@/trpc/client";
+import { useState } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconEdit } from "@tabler/icons-react";
-import { useState } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -16,32 +19,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Automation } from "@/modules/mailing/types";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { trpc } from "@/trpc/client";
 
 const formSchema = z.object({
   id: z.number(),
@@ -56,7 +41,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EditDialogProps {
   automation: Automation;
-};
+}
 
 export const EditDialog = ({ automation }: EditDialogProps) => {
   const [open, setOpen] = useState(false);
@@ -88,7 +73,7 @@ export const EditDialog = ({ automation }: EditDialogProps) => {
     },
   });
 
-  function onSubmit (values: FormValues) {
+  function onSubmit(values: FormValues) {
     // Preparar los datos para la actualización
     const { scheduledDate } = values;
 
@@ -102,9 +87,9 @@ export const EditDialog = ({ automation }: EditDialogProps) => {
     // Preparar triggerSettings manteniendo los valores originales pero actualizando la fecha si cambió
     const updatedTriggerSettings = dateHasChanged
       ? {
-        ...automation.triggerSettings,
-        scheduledDate: newDate || automation.triggerSettings.scheduledDate,
-      }
+          ...automation.triggerSettings,
+          scheduledDate: newDate || automation.triggerSettings.scheduledDate,
+        }
       : automation.triggerSettings;
 
     updateAutomation.mutate({
@@ -125,7 +110,7 @@ export const EditDialog = ({ automation }: EditDialogProps) => {
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                className="text-blue-400 mr-2"
+                className="mr-2 text-blue-400"
                 variant="outline"
                 onClick={() => setOpen(true)}
                 id={`edit-dialog-trigger-${automation.id}`}
@@ -142,9 +127,7 @@ export const EditDialog = ({ automation }: EditDialogProps) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar automatización</DialogTitle>
-          <DialogDescription>
-            Modifica los detalles de la automatización
-          </DialogDescription>
+          <DialogDescription>Modifica los detalles de la automatización</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -223,18 +206,10 @@ export const EditDialog = ({ automation }: EditDialogProps) => {
             )}
 
             <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                className="ml-2"
-                disabled={updateAutomation.isPending}
-              >
+              <Button type="submit" className="ml-2" disabled={updateAutomation.isPending}>
                 {updateAutomation.isPending ? "Guardando..." : "Guardar cambios"}
               </Button>
             </DialogFooter>

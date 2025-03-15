@@ -15,12 +15,11 @@ export const ReviewsReminderHeader = () => {
               <h1 className="text-2xl">Reviews Reminder</h1>
             </div>
             <p className="text-muted-foreground">
-              Send a reminder email to your customers to encourage them to leave
-              a review.
+              Send a reminder email to your customers to encourage them to leave a review.
             </p>
           </div>
           <div className="justify-self-end">
-            <Button onClick={() => { }}>
+            <Button onClick={() => {}}>
               <IconSettings />
               Ajustes generales
             </Button>

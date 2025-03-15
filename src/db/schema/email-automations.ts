@@ -1,13 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  boolean,
-  jsonb,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 import automationSteps from "./automations-stepts";
@@ -24,16 +16,11 @@ const emailAutomations = pgTable("email_automations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const emailAutomationsRelations = relations(
-  emailAutomations,
-  ({ many }) => ({
-    steps: many(automationSteps),
-  })
-);
+export const emailAutomationsRelations = relations(emailAutomations, ({ many }) => ({
+  steps: many(automationSteps),
+}));
 
-export const emailAutomationSelectSchema =
-  createSelectSchema(emailAutomations);
-export const emailAutomationInsertSchema =
-  createInsertSchema(emailAutomations);
+export const emailAutomationSelectSchema = createSelectSchema(emailAutomations);
+export const emailAutomationInsertSchema = createInsertSchema(emailAutomations);
 
 export default emailAutomations;

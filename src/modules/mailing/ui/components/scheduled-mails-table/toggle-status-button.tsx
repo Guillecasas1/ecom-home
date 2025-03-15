@@ -1,21 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/trpc/client";
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { trpc } from "@/trpc/client";
 
-export const ToggleStatusButton = ({
-  id,
-  status
-}: {
-  id: number;
-  status: string;
-}) => {
+export const ToggleStatusButton = ({ id, status }: { id: number; status: string }) => {
   const utils = trpc.useUtils();
   const toggleStatus = trpc.reviews.toggleStatus.useMutation({
     onSuccess: () => {
@@ -29,7 +18,7 @@ export const ToggleStatusButton = ({
     toggleStatus.mutate({
       id,
       newStatus: isPaused ? "pending" : "paused",
-      isActive: isPaused
+      isActive: isPaused,
     });
   };
 
@@ -52,6 +41,5 @@ export const ToggleStatusButton = ({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-
   );
-}
+};

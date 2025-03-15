@@ -1,7 +1,8 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { type FC } from "react";
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const DataTableSkeleton: FC = () => {
   return (
@@ -28,10 +29,7 @@ export const DataTableSkeleton: FC = () => {
           <div key={`row-${index}`} className="border-b p-4">
             <div className="flex items-center gap-4">
               {Array.from({ length: 4 }).map((_, cellIndex) => (
-                <Skeleton
-                  key={`cell-${index}-${cellIndex}`}
-                  className="h-4 w-[100px]"
-                />
+                <Skeleton key={`cell-${index}-${cellIndex}`} className="h-4 w-[100px]" />
               ))}
             </div>
           </div>
@@ -49,4 +47,4 @@ export const DataTableSkeleton: FC = () => {
       </div>
     </div>
   );
-}; 
+};

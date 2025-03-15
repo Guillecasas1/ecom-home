@@ -1,13 +1,9 @@
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { trpc } from "@/trpc/client";
 import { IconSend } from "@tabler/icons-react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { trpc } from "@/trpc/client";
 
 type SendNowButtonProps = {
   id: number;
@@ -24,7 +20,9 @@ export const SendNowButton = ({ id, status }: SendNowButtonProps) => {
     },
     onError: (error) => {
       console.error("Error al enviar el email:", error);
-      toast.error("Ha ocurrido un error al enviar el email. Por favor, inténtelo de nuevo en unos segundos.");
+      toast.error(
+        "Ha ocurrido un error al enviar el email. Por favor, inténtelo de nuevo en unos segundos."
+      );
     },
   });
 

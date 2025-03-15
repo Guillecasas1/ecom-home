@@ -1,13 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  integer,
-  jsonb,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 import emailSends from "./email-sends";
 import emailTemplates from "./email-templates";
@@ -37,16 +29,13 @@ const emailCampaigns = pgTable("email_campaigns", {
   segmentationRules: jsonb("segmentation_rules"), // Reglas de segmentación en formato JSON
 });
 
-export const emailCampaignsRelations = relations(
-  emailCampaigns,
-  ({ one, many }) => ({
-    template: one(emailTemplates, {
-      fields: [emailCampaigns.templateId],
-      references: [emailTemplates.id],
-    }),
-    lists: many(subscriberLists),
-    sends: many(emailSends),
-  })
-);
+export const emailCampaignsRelations = relations(emailCampaigns, ({ one, many }) => ({
+  template: one(emailTemplates, {
+    fields: [emailCampaigns.templateId],
+    references: [emailTemplates.id],
+  }),
+  lists: many(subscriberLists),
+  sends: many(emailSends),
+}));
 
 export default emailCampaigns;

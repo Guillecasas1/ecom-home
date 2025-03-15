@@ -4,16 +4,11 @@ import crypto from "crypto";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import {
-  automationSteps,
-  emailAutomations,
-  emailTemplates,
-  subscribers,
-} from "@/db/schema";
+import { automationSteps, emailAutomations, emailTemplates, subscribers } from "@/db/schema";
 import { WoocommerceOrder } from "@/types/woocommerce";
 import { env } from "@/utils/env/server";
 
-export async function POST (request: Request) {
+export async function POST(request: Request) {
   const clonedRequest = request.clone();
 
   try {
@@ -71,10 +66,7 @@ export async function POST (request: Request) {
     });
 
     if (!automationResult.success) {
-      return NextResponse.json(
-        { error: automationResult.error },
-        { status: 200 }
-      );
+      return NextResponse.json({ error: automationResult.error }, { status: 200 });
     }
 
     console.log("Follow-up email scheduled", {
@@ -98,26 +90,17 @@ export async function POST (request: Request) {
 }
 
 // Función para validar la firma del webhook
-function validateWooCommerceSignature (
-  signature: string | null,
-  payload: string
-): boolean {
+function validateWooCommerceSignature(signature: string | null, payload: string): boolean {
   if (!signature) {
     console.warn("Missing webhook signature or secret");
     return false;
   }
 
   try {
-    const hmac = crypto.createHmac(
-      "sha256",
-      env.WOOCOMMERCE_WEBHOOK_SECRET
-    );
+    const hmac = crypto.createHmac("sha256", env.WOOCOMMERCE_WEBHOOK_SECRET);
     const calculatedSignature = hmac.update(payload).digest("base64");
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(calculatedSignature)
-    );
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(calculatedSignature));
   } catch (error) {
     console.error("Error validating webhook signature", { error });
     return false;
@@ -125,13 +108,13 @@ function validateWooCommerceSignature (
 }
 
 // Función para calcular una fecha futura con un delay en días
-function calculateDateAfterDelay (days: number): Date {
+function calculateDateAfterDelay(days: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date;
 }
 
-async function processSubscriber (data: WoocommerceOrder): Promise<{
+async function processSubscriber(data: WoocommerceOrder): Promise<{
   success: boolean;
   subscriberId?: number;
   error?: string;
@@ -198,15 +181,12 @@ async function processSubscriber (data: WoocommerceOrder): Promise<{
     });
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown error processing subscriber",
+      error: error instanceof Error ? error.message : "Unknown error processing subscriber",
     };
   }
 }
 
-async function createFollowupAutomation (params: {
+async function createFollowupAutomation(params: {
   orderId: number;
   subscriberId: number;
   customerEmail: string;
@@ -269,10 +249,7 @@ async function createFollowupAutomation (params: {
     });
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown error creating automation",
+      error: error instanceof Error ? error.message : "Unknown error creating automation",
     };
   }
 }

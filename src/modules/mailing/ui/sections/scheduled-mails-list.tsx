@@ -14,9 +14,7 @@ import { emailAutomationsListColumns } from "../components/scheduled-mails-table
 export const ScheduledMailsList = () => {
   return (
     <Suspense fallback={<DataTableSkeleton />}>
-      <ErrorBoundary
-        fallback={<div>Error al cargar la sección de proyectos</div>}
-      >
+      <ErrorBoundary fallback={<div>Error al cargar la sección de proyectos</div>}>
         <ScheduledMailsListSuspense />
       </ErrorBoundary>
     </Suspense>

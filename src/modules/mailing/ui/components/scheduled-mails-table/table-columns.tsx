@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,40 +11,103 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Automation } from "@/modules/mailing/types";
+
 import { EditDialog } from "./edit-modal";
 import { SendNowButton } from "./send-now-btn";
 import { ToggleStatusButton } from "./toggle-status-button";
 
 export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
+  // {
+  //   accessorKey: "name",
+  //   header: ({ column }) => {
+  //     return (
+  //       <Button
+  //         variant="ghost"
+  //         className="ml-2 pl-0"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       >
+  //         Name
+  //         <ArrowUpDown className="ml-2 h-4 w-4" />
+  //       </Button>
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const automation = row.original;
+  //     return (
+  //       <div className="pl-2">
+  //         <span>{automation.name}</span>
+  //       </div>
+  //     );
+  //   },
+  // },
   {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          className="ml-2 pl-0"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    accessorKey: "description",
+    header: "Order Id",
     cell: ({ row }) => {
       const automation = row.original;
       return (
         <div className="pl-2">
-          <span>{automation.name}</span>
+          <span>{automation.triggerSettings?.orderId}</span>
         </div>
       );
     },
   },
   {
-    accessorKey: "description",
-    header: "Description",
+    id: "client",
+    accessorFn: (row) => row.triggerSettings?.customerName || '',
+    header: "Cliente",
+    cell: ({ row }) => {
+      const automation = row.original;
+      // Obtener el nombre del usuario desde triggerSettings
+      const userName = automation.triggerSettings?.customerName;
+
+      return (
+        <div className="pl-2">
+          <span>{userName || 'Sin nombre'}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Pedido enviado el",
+    cell: ({ row }) => {
+      const automation = row.original;
+      return (
+        <div>
+          <span>{automation.createdAt.toLocaleString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "scheduledDate",
+    header: "Fecha de envío",
+    cell: ({ row }) => {
+      const automation = row.original;
+      // Obtener la fecha programada desde triggerSettings
+      const scheduledDate = automation.triggerSettings?.scheduledDate;
+
+      return (
+        <div>
+          <span>
+            {scheduledDate
+              ? new Date(scheduledDate).toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+              : 'No programado'}
+          </span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
@@ -69,9 +132,7 @@ export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
       };
 
       // Obtener los datos del estado actual o usar un valor por defecto
-      const currentStatus = statusData[
-        automation.status as keyof typeof statusData
-      ] || {
+      const currentStatus = statusData[automation.status as keyof typeof statusData] || {
         text: automation.status,
         color: "bg-gray-200 text-gray-800",
       };
@@ -85,20 +146,6 @@ export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
       );
     },
   },
-  // {
-  //   accessorKey: "is_active",
-  //   header: () => {
-  //     return (
-  //       <div className="w-full text-right">
-  //         <span>Is active</span>
-  //       </div>
-  //     );
-  //   },
-  //   cell: ({ row }) => {
-  //     const automation = row.original;
-  //     return <SwitchCell id={automation.id} isActive={automation.isActive} />;
-  //   },
-  // },
   {
     id: "actions",
     header: () => {
@@ -130,17 +177,11 @@ export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {automation.status === "pending" && (
-                  <DropdownMenuItem
-                    onClick={() => { }}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => { }} className="cursor-pointer">
                     {/* {isProcessing ? "Procesando..." : "Enviar ahora"} */}
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem
-                  onClick={() => { }}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={() => { }} className="cursor-pointer">
                   {automation.status === "paused" ? "Iniciar automatización" : "Pausar automatización"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

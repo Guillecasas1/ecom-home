@@ -11,11 +11,10 @@ import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 // import sgMail from '@sendgrid/mail';
 // import Mailgun from 'mailgun.js';
 
-
 /**
  * Envía un email utilizando el proveedor configurado
  */
-export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
+export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
     // Obtener la configuración activa del email
     const [emailConfig] = await db
@@ -34,9 +33,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
 
     // Validar los parámetros básicos requeridos
     if (!options.to || !options.subject || !options.html) {
-      throw new Error(
-        "Missing required email parameters: to, subject, or html"
-      );
+      throw new Error("Missing required email parameters: to, subject, or html");
     }
 
     // Preparar opciones con valores por defecto
@@ -46,13 +43,9 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
         name: options.from?.name || emailConfig.defaultFromName,
         email: options.from?.email || emailConfig.defaultFromEmail,
       },
-      replyTo:
-        options.replyTo ||
-        emailConfig.defaultReplyTo ||
-        emailConfig.defaultFromEmail,
+      replyTo: options.replyTo || emailConfig.defaultReplyTo || emailConfig.defaultFromEmail,
       trackOpens: options.trackOpens !== undefined ? options.trackOpens : true,
-      trackClicks:
-        options.trackClicks !== undefined ? options.trackClicks : true,
+      trackClicks: options.trackClicks !== undefined ? options.trackClicks : true,
     };
 
     // Enviar email según el proveedor configurado
@@ -82,10 +75,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
     if (result.success) {
       console.info("Email sent successfully", {
         provider: providerType,
-        to:
-          typeof emailOptions.to === "string"
-            ? emailOptions.to
-            : emailOptions.to.join(", "),
+        to: typeof emailOptions.to === "string" ? emailOptions.to : emailOptions.to.join(", "),
         subject: emailOptions.subject,
         messageId: result.messageId,
       });
@@ -93,10 +83,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
       console.error("Failed to send email", {
         provider: providerType,
         error: result.error,
-        to:
-          typeof emailOptions.to === "string"
-            ? emailOptions.to
-            : emailOptions.to.join(", "),
+        to: typeof emailOptions.to === "string" ? emailOptions.to : emailOptions.to.join(", "),
         subject: emailOptions.subject,
       });
     }
@@ -106,8 +93,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
     console.error("Error in email sender service", { error });
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Unknown email sender error",
+      error: error instanceof Error ? error.message : "Unknown email sender error",
     };
   }
 }
@@ -188,7 +174,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
 /**
  * Envía email a través de SMTP (nodemailer)
  */
-async function sendViaSmtp (
+async function sendViaSmtp(
   options: EmailOptions,
   // eslint-disable-next-line
   config: Record<string, any>
@@ -238,13 +224,12 @@ async function sendViaSmtp (
         "X-Entity-Ref-ID": options.metadata?.messageId || Date.now().toString(),
         ...(options.metadata
           ? Object.entries(options.metadata).reduce(
-            (acc, [key, value]) => {
-              acc[`X-Metadata-${key}`] =
-                typeof value === "string" ? value : JSON.stringify(value);
-              return acc;
-            },
-            {} as Record<string, string>
-          )
+              (acc, [key, value]) => {
+                acc[`X-Metadata-${key}`] = typeof value === "string" ? value : JSON.stringify(value);
+                return acc;
+              },
+              {} as Record<string, string>
+            )
           : {}),
       },
     };

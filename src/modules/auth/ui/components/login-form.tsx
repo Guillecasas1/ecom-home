@@ -9,14 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
 import { login } from "../../actions/login";
@@ -78,15 +71,8 @@ export const LoginForm = () => {
                   <FormControl>
                     <Input {...field} type="password" disabled={isPending} />
                   </FormControl>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="px-0 font-normal"
-                    asChild
-                  >
-                    <Link href="/auth/reset-password">
-                      ¿Has olvidado tu contraseña?
-                    </Link>
+                  <Button variant="link" size="sm" className="px-0 font-normal" asChild>
+                    <Link href="/auth/reset-password">¿Has olvidado tu contraseña?</Link>
                   </Button>
                   <FormMessage />
                 </FormItem>

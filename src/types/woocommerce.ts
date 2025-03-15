@@ -69,7 +69,6 @@ interface MetaData {
   value: string;
 }
 
-
 // eslint-disable-next-line
 export interface WoocommerceLineItem {
   id: number;

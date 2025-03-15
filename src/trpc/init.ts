@@ -35,7 +35,7 @@ export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(
   // eslint-disable-next-line
-  async function isAuthed (opts) {
+  async function isAuthed(opts) {
     // const { ctx } = opts;
 
     // if (!ctx.userId) {

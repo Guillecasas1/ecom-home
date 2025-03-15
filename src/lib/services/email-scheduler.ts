@@ -13,11 +13,10 @@ import {
 import { sendEmail } from "@/lib/services/email-sender";
 import type { Automation, EmailConfig, Step, Template, TriggerSettings } from "@/modules/mailing/types";
 
-
 /**
  * Procesa los emails programados y los envía cuando sea el momento
  */
-export async function processScheduledEmails () {
+export async function processScheduledEmails() {
   const now = new Date();
   console.info("Starting scheduled email processing");
 
@@ -34,7 +33,7 @@ export async function processScheduledEmails () {
     }
 
     // Buscar todas las automatizaciones activas de tipo order_completed
-    const activeAutomations = await db
+    const activeAutomations = (await db
       .select()
       .from(emailAutomations)
       .where(
@@ -43,11 +42,9 @@ export async function processScheduledEmails () {
           eq(emailAutomations.triggerType, "order_completed"),
           eq(emailAutomations.status, "pending")
         )
-      ) as Automation[];
+      )) as Automation[];
 
-    console.info(
-      `Found ${activeAutomations.length} active automations to process`
-    );
+    console.info(`Found ${activeAutomations.length} active automations to process`);
 
     const results = {
       processed: 0,
@@ -59,8 +56,7 @@ export async function processScheduledEmails () {
     for (const automation of activeAutomations) {
       try {
         // Verificar si la fecha programada ya pasó
-        const triggerSettings =
-          automation.triggerSettings as TriggerSettings;
+        const triggerSettings = automation.triggerSettings as TriggerSettings;
 
         if (!triggerSettings || !triggerSettings.scheduledDate) {
           console.warn("Automation has invalid trigger settings", {
@@ -81,12 +77,7 @@ export async function processScheduledEmails () {
         const [step] = await db
           .select()
           .from(automationSteps)
-          .where(
-            and(
-              eq(automationSteps.automationId, automation.id),
-              eq(automationSteps.isActive, true)
-            )
-          )
+          .where(and(eq(automationSteps.automationId, automation.id), eq(automationSteps.isActive, true)))
           .orderBy(automationSteps.stepOrder)
           .limit(1);
 
@@ -99,9 +90,7 @@ export async function processScheduledEmails () {
         }
 
         results.processed++;
-        console.info(
-          `Processing automation ${automation.id} for order ${triggerSettings.orderId}`
-        );
+        console.info(`Processing automation ${automation.id} for order ${triggerSettings.orderId}`);
 
         // Obtener la plantilla si existe
         let template = null;
@@ -130,7 +119,7 @@ export async function processScheduledEmails () {
             .update(emailAutomations)
             .set({
               status: "completed",
-              isActive: false
+              isActive: false,
             })
             .where(eq(emailAutomations.id, automation.id));
 
@@ -139,13 +128,10 @@ export async function processScheduledEmails () {
           );
         } else {
           results.failed++;
-          console.error(
-            `Failed to send email for automation ${automation.id}`,
-            {
-              error: emailResult.error,
-              orderId: triggerSettings.orderId,
-            }
-          );
+          console.error(`Failed to send email for automation ${automation.id}`, {
+            error: emailResult.error,
+            orderId: triggerSettings.orderId,
+          });
         }
       } catch (error) {
         results.failed++;
@@ -166,7 +152,7 @@ export async function processScheduledEmails () {
 /**
  * Prepara y envía un email basado en una automatización
  */
-export async function prepareAndSendEmail (
+export async function prepareAndSendEmail(
   automation: Automation,
   step: Step,
   template: Template | null,
@@ -182,9 +168,7 @@ export async function prepareAndSendEmail (
       .limit(1);
 
     if (!subscriber) {
-      throw new Error(
-        `Subscriber with ID ${triggerSettings.subscriberId} not found`
-      );
+      throw new Error(`Subscriber with ID ${triggerSettings.subscriberId} not found`);
     }
 
     // Preparar el contenido del email
@@ -217,8 +201,7 @@ export async function prepareAndSendEmail (
       lastName: subscriber.lastName || "",
       email: subscriber.email,
       orderId: triggerSettings.orderId,
-      customerName:
-        triggerSettings.customerName || subscriber.firstName || "Cliente",
+      customerName: triggerSettings.customerName || subscriber.firstName || "Cliente",
     });
 
     // Personalizar el asunto del email
@@ -228,8 +211,7 @@ export async function prepareAndSendEmail (
       lastName: subscriber.lastName || "",
       email: subscriber.email,
       orderId: triggerSettings.orderId,
-      customerName:
-        triggerSettings.customerName || subscriber.firstName || "Cliente",
+      customerName: triggerSettings.customerName || subscriber.firstName || "Cliente",
     });
 
     // Enviar el email
@@ -268,7 +250,7 @@ export async function prepareAndSendEmail (
 
       return { success: true };
     } else {
-      throw new Error(emailResult.error as string || "Unknown error sending email");
+      throw new Error((emailResult.error as string) || "Unknown error sending email");
     }
   } catch (error) {
     console.error("Error preparing and sending email", { error });
@@ -282,7 +264,7 @@ export async function prepareAndSendEmail (
 /**
  * Personaliza el contenido del email sustituyendo variables
  */
-function personalizeEmailContent (
+function personalizeEmailContent(
   content: string,
   data: {
     subscriberId: number;
@@ -309,7 +291,7 @@ function personalizeEmailContent (
 /**
  * Programa un email para ser enviado después de un número específico de días
  */
-export async function scheduleEmail ({
+export async function scheduleEmail({
   templateId,
   subscriberId,
   delayDays,
@@ -351,8 +333,7 @@ export async function scheduleEmail ({
             scheduledDate: scheduledDate.toISOString(),
             subscriberId: subscriberId,
             customerEmail: subscriber.email,
-            customerName:
-              `${subscriber.firstName} ${subscriber.lastName}`.trim(),
+            customerName: `${subscriber.firstName} ${subscriber.lastName}`.trim(),
             ...metadata,
           },
           status: "pending",
@@ -387,10 +368,7 @@ export async function scheduleEmail ({
     console.error("Error scheduling email", { error });
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown error scheduling email",
+      error: error instanceof Error ? error.message : "Unknown error scheduling email",
     };
   }
 }

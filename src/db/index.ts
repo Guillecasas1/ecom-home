@@ -3,8 +3,5 @@ import postgres from "postgres";
 
 import { env } from "@/utils/env/server";
 
-const connectionString = env.SUPABASE_DATABASE_URL!;
-
-// Disable prefetch as it is not supported for "Transaction" pool mode
-const client = postgres(connectionString, { prepare: false });
-export const db = drizzle(client);
+const client = postgres(env.SUPABASE_DATABASE_URL);
+export const db = drizzle({ client });
