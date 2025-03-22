@@ -111,6 +111,7 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
         to: typeof emailOptions.to === "string" ? emailOptions.to : emailOptions.to.join(", "),
         subject: emailOptions.subject,
         messageId: result.messageId,
+        trackingId
       });
     } else {
       console.error("Failed to send email", {

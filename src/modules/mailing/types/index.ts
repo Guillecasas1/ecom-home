@@ -32,6 +32,7 @@ export type EmailResult = {
   messageId?: string;
   providerResponse?: unknown;
   error?: unknown;
+  trackingId?: string;
 };
 
 export type Step = {

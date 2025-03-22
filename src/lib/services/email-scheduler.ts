@@ -16,7 +16,7 @@ import type { Automation, EmailConfig, Step, Template, TriggerSettings } from "@
 /**
  * Procesa los emails programados y los envía cuando sea el momento
  */
-export async function processScheduledEmails() {
+export async function processScheduledEmails () {
   const now = new Date();
   console.info("Starting scheduled email processing");
 
@@ -152,7 +152,7 @@ export async function processScheduledEmails() {
 /**
  * Prepara y envía un email basado en una automatización
  */
-export async function prepareAndSendEmail(
+export async function prepareAndSendEmail (
   automation: Automation,
   step: Step,
   template: Template | null,
@@ -245,6 +245,7 @@ export async function prepareAndSendEmail(
           orderId: triggerSettings.orderId || null,
           // Verificar si messageId existe, si no, usar un valor por defecto
           messageId: emailResult.messageId || "unknown",
+          trackingId: emailResult.trackingId // <- Asegurarte de que esto existe
         },
       });
 
@@ -264,7 +265,7 @@ export async function prepareAndSendEmail(
 /**
  * Personaliza el contenido del email sustituyendo variables
  */
-function personalizeEmailContent(
+function personalizeEmailContent (
   content: string,
   data: {
     subscriberId: number;
@@ -291,7 +292,7 @@ function personalizeEmailContent(
 /**
  * Programa un email para ser enviado después de un número específico de días
  */
-export async function scheduleEmail({
+export async function scheduleEmail ({
   templateId,
   subscriberId,
   delayDays,
