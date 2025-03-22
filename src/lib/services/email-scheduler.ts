@@ -245,7 +245,7 @@ export async function prepareAndSendEmail (
           orderId: triggerSettings.orderId || null,
           // Verificar si messageId existe, si no, usar un valor por defecto
           messageId: emailResult.messageId || "unknown",
-          trackingId: emailResult.trackingId // <- Asegurarte de que esto existe
+          trackingId: emailResult.trackingId
         },
       });
 
