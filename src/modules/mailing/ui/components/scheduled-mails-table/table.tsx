@@ -17,6 +17,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -61,7 +68,7 @@ export function DataTable<TData, TValue> ({
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Filtrar por cliente..."
           value={(table.getColumn("client")?.getFilterValue() as string) ?? ""}
@@ -70,6 +77,24 @@ export function DataTable<TData, TValue> ({
           }
           className="max-w-sm"
         />
+        {table.getColumn("status") && (
+          <Select
+            value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
+            onValueChange={(value) =>
+              table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pending">Pendiente</SelectItem>
+              <SelectItem value="paused">Pausado</SelectItem>
+              <SelectItem value="completed">Completado</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>

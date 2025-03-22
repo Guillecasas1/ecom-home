@@ -112,6 +112,7 @@ export const emailAutomationsListColumns: ColumnDef<Automation>[] = [
   {
     accessorKey: "status",
     header: "Estado",
+    filterFn: 'includesString',
     cell: ({ row }) => {
       const automation = row.original;
 

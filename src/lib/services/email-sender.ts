@@ -11,10 +11,29 @@ import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 // import sgMail from '@sendgrid/mail';
 // import Mailgun from 'mailgun.js';
 
+function addTrackingToEmail (html: string, trackingId: string, baseUrl: string): string {
+  // Añadir pixel invisible para seguimiento de aperturas
+  const trackingPixel = `<img src="${baseUrl}/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
+  html = html + trackingPixel;
+
+  // Reescribir enlaces para seguimiento de clics
+  const regex = /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/gi;
+  html = html.replace(regex, (match, quote, url) => {
+    // No modificar enlaces de baja (unsubscribe) o enlaces que ya tienen seguimiento
+    if (url.includes('/unsubscribe') || url.includes('/api/tracking/')) {
+      return match;
+    }
+    const encodedUrl = encodeURIComponent(url);
+    return `<a href=${quote}${baseUrl}/api/analytics/email-tracking/reviews/click/${trackingId}?url=${encodedUrl}${quote}`;
+  });
+
+  return html;
+}
+
 /**
  * Envía un email utilizando el proveedor configurado
  */
-export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
+export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
   try {
     // Obtener la configuración activa del email
     const [emailConfig] = await db
@@ -36,6 +55,8 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       throw new Error("Missing required email parameters: to, subject, or html");
     }
 
+    const trackingId = crypto.randomUUID()
+
     // Preparar opciones con valores por defecto
     const emailOptions = {
       ...options,
@@ -47,6 +68,18 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       trackOpens: options.trackOpens !== undefined ? options.trackOpens : true,
       trackClicks: options.trackClicks !== undefined ? options.trackClicks : true,
     };
+
+    // Aplicar seguimiento si está habilitado
+    if (options.trackOpens || options.trackClicks) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://labatitapresumida.com';
+      emailOptions.html = addTrackingToEmail(emailOptions.html, trackingId, baseUrl);
+
+      // Guardar el ID de seguimiento en los metadatos
+      emailOptions.metadata = {
+        ...emailOptions.metadata,
+        trackingId
+      };
+    }
 
     // Enviar email según el proveedor configurado
     let result: EmailResult;
@@ -174,7 +207,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 /**
  * Envía email a través de SMTP (nodemailer)
  */
-async function sendViaSmtp(
+async function sendViaSmtp (
   options: EmailOptions,
   // eslint-disable-next-line
   config: Record<string, any>
@@ -224,12 +257,12 @@ async function sendViaSmtp(
         "X-Entity-Ref-ID": options.metadata?.messageId || Date.now().toString(),
         ...(options.metadata
           ? Object.entries(options.metadata).reduce(
-              (acc, [key, value]) => {
-                acc[`X-Metadata-${key}`] = typeof value === "string" ? value : JSON.stringify(value);
-                return acc;
-              },
-              {} as Record<string, string>
-            )
+            (acc, [key, value]) => {
+              acc[`X-Metadata-${key}`] = typeof value === "string" ? value : JSON.stringify(value);
+              return acc;
+            },
+            {} as Record<string, string>
+          )
           : {}),
       },
     };
