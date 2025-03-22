@@ -13,7 +13,7 @@ import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 
 function addTrackingToEmail (html: string, trackingId: string, baseUrl: string): string {
   // Añadir pixel invisible para seguimiento de aperturas
-  const trackingPixel = `<img src="${baseUrl}/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
+  const trackingPixel = `<img src="https://ecom-home.vercel.app/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
   html = html + trackingPixel;
 
   // Reescribir enlaces para seguimiento de clics
@@ -24,7 +24,7 @@ function addTrackingToEmail (html: string, trackingId: string, baseUrl: string):
       return match;
     }
     const encodedUrl = encodeURIComponent(url);
-    return `<a href=${quote}${baseUrl}/api/analytics/email-tracking/reviews/click/${trackingId}?url=${encodedUrl}${quote}`;
+    return `<a href=${quote}https://ecom-home.vercel.app/api/analytics/email-tracking/reviews/clicks/${trackingId}?url=${encodedUrl}${quote}`;
   });
 
   return html;
