@@ -1,4 +1,3 @@
-// app/api/tracking/click/[id]/route.ts
 import { db } from '@/db';
 import { emailEvents, emailSends } from '@/db/schema';
 import { sql } from 'drizzle-orm';
