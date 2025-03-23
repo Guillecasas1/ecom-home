@@ -1,4 +1,3 @@
-// app/api/tracking/open/[id]/route.ts
 import { db } from '@/db';
 import { emailEvents, emailSends } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -10,6 +9,7 @@ export async function GET (
 ) {
   try {
     const { id } = await params;
+    console.log('email tracking open', id);
     // Buscar el envío por trackingId
     const [emailSend] = await db
       .select()
