@@ -11,8 +11,7 @@ import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 function addTrackingToEmail (html: string, trackingId: string): string {
   // Añadir pixel invisible para seguimiento de aperturas
   const trackingPixel = `<img src="https://ecom-home.vercel.app/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
-  html = html + trackingPixel;
-
+  html = html.replace(/<\/body>/i, `${trackingPixel}</body>`);
   // Reescribir enlaces para seguimiento de clics
   const regex = /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/gi;
   html = html.replace(regex, (match, quote, url) => {
