@@ -2,9 +2,14 @@ import { type NextRequest } from "next/server";
 
 import { updateSession } from "@/utils/supabase/middleware";
 
-const publicRoutes = ["/api/webhooks/woocommerce/order-update", "/api/cron/process-emails"];
+const publicRoutes = [
+  "/api/webhooks/woocommerce/order-update",
+  "/api/cron/process-emails",
+  "/api/analytics/email-tracking/reviews/open",
+  "/api/analytics/email-tracking/reviews/clicks",
+];
 
-export async function middleware(request: NextRequest) {
+export async function middleware (request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (publicRoutes.includes(pathname)) {
