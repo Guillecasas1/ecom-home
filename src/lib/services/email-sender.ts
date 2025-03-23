@@ -6,12 +6,9 @@ import { db } from "@/db";
 import { emailSettings } from "@/db/schema";
 import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 
-// import formData from 'form-data';
-// import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-// import sgMail from '@sendgrid/mail';
 // import Mailgun from 'mailgun.js';
 
-function addTrackingToEmail (html: string, trackingId: string, baseUrl: string): string {
+function addTrackingToEmail (html: string, trackingId: string): string {
   // Añadir pixel invisible para seguimiento de aperturas
   const trackingPixel = `<img src="https://ecom-home.vercel.app/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
   html = html + trackingPixel;
@@ -55,8 +52,6 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
       throw new Error("Missing required email parameters: to, subject, or html");
     }
 
-    const trackingId = crypto.randomUUID()
-
     // Preparar opciones con valores por defecto
     const emailOptions = {
       ...options,
@@ -69,17 +64,13 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
       trackClicks: options.trackClicks !== undefined ? options.trackClicks : true,
     };
 
-    // Aplicar seguimiento si está habilitado
-    if (options.trackOpens || options.trackClicks) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://labatitapresumida.com';
-      emailOptions.html = addTrackingToEmail(emailOptions.html, trackingId, baseUrl);
+    const trackingId = crypto.randomUUID()
+    emailOptions.html = addTrackingToEmail(emailOptions.html, trackingId);
 
-      // Guardar el ID de seguimiento en los metadatos
-      emailOptions.metadata = {
-        ...emailOptions.metadata,
-        trackingId
-      };
-    }
+    emailOptions.metadata = {
+      ...emailOptions.metadata,
+      trackingId
+    };
 
     // Enviar email según el proveedor configurado
     let result: EmailResult;
@@ -134,79 +125,6 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
     };
   }
 }
-
-/**
- * Envía email a través de Mailgun
- */
-// async function sendViaMailgun(options: EmailOptions, config: Record<string, any>): Promise<EmailResult> {
-//   try {
-//     // Validar configuración de Mailgun
-//     if (!config.apiKey || !config.domain) {
-//       throw new Error('Missing Mailgun configuration: apiKey or domain');
-//     }
-
-//     // Inicializar cliente de Mailgun
-//     const mailgun = new Mailgun(formData);
-//     const mg = mailgun.client({
-//       username: 'api',
-//       key: config.apiKey,
-//       url: config.region === 'eu' ? 'https://api.eu.mailgun.net' : 'https://api.mailgun.net'
-//     });
-
-//     // Configurar opciones de seguimiento
-//     const tracking = {
-//       opens: options.trackOpens,
-//       clicks: options.trackClicks
-//     };
-
-//     // Preparar destinatarios
-//     const recipients = Array.isArray(options.to) ? options.to.join(',') : options.to;
-
-//     // Construir el mensaje
-//     const message = {
-//       from: `${options.from.name} <${options.from.email}>`,
-//       to: recipients,
-//       subject: options.subject,
-//       html: options.html,
-//       text: options.text || '',
-//       'h:Reply-To': options.replyTo || options.from.email,
-//       'o:tracking': tracking.opens || tracking.clicks,
-//       'o:tracking-opens': tracking.opens,
-//       'o:tracking-clicks': tracking.clicks ? 'htmlonly' : false,
-//       'v:X-Metadata': options.metadata ? JSON.stringify(options.metadata) : '{}'
-//     };
-
-//     // Añadir attachments si existen
-//     if (options.attachments && options.attachments.length > 0) {
-//       const attachments: any[] = [];
-
-//       options.attachments.forEach(attachment => {
-//         attachments.push({
-//           filename: attachment.filename,
-//           data: attachment.content,
-//           contentType: attachment.contentType
-//         });
-//       });
-
-//       // @ts-ignore - Mailgun tiene tipos incompletos
-//       message.attachment = attachments;
-//     }
-
-//     // Enviar email
-//     const response = await mg.messages.create(config.domain, message);
-
-//     return {
-//       success: true,
-//       messageId: response.id,
-//       providerResponse: response
-//     };
-//   } catch (error) {
-//     return {
-//       success: false,
-//       error: error instanceof Error ? error.message : 'Unknown Mailgun error'
-//     };
-//   }
-// }
 
 /**
  * Envía email a través de SMTP (nodemailer)
@@ -286,6 +204,79 @@ async function sendViaSmtp (
     };
   }
 }
+
+/**
+ * Envía email a través de Mailgun
+ */
+// async function sendViaMailgun(options: EmailOptions, config: Record<string, any>): Promise<EmailResult> {
+//   try {
+//     // Validar configuración de Mailgun
+//     if (!config.apiKey || !config.domain) {
+//       throw new Error('Missing Mailgun configuration: apiKey or domain');
+//     }
+
+//     // Inicializar cliente de Mailgun
+//     const mailgun = new Mailgun(formData);
+//     const mg = mailgun.client({
+//       username: 'api',
+//       key: config.apiKey,
+//       url: config.region === 'eu' ? 'https://api.eu.mailgun.net' : 'https://api.mailgun.net'
+//     });
+
+//     // Configurar opciones de seguimiento
+//     const tracking = {
+//       opens: options.trackOpens,
+//       clicks: options.trackClicks
+//     };
+
+//     // Preparar destinatarios
+//     const recipients = Array.isArray(options.to) ? options.to.join(',') : options.to;
+
+//     // Construir el mensaje
+//     const message = {
+//       from: `${options.from.name} <${options.from.email}>`,
+//       to: recipients,
+//       subject: options.subject,
+//       html: options.html,
+//       text: options.text || '',
+//       'h:Reply-To': options.replyTo || options.from.email,
+//       'o:tracking': tracking.opens || tracking.clicks,
+//       'o:tracking-opens': tracking.opens,
+//       'o:tracking-clicks': tracking.clicks ? 'htmlonly' : false,
+//       'v:X-Metadata': options.metadata ? JSON.stringify(options.metadata) : '{}'
+//     };
+
+//     // Añadir attachments si existen
+//     if (options.attachments && options.attachments.length > 0) {
+//       const attachments: any[] = [];
+
+//       options.attachments.forEach(attachment => {
+//         attachments.push({
+//           filename: attachment.filename,
+//           data: attachment.content,
+//           contentType: attachment.contentType
+//         });
+//       });
+
+//       // @ts-ignore - Mailgun tiene tipos incompletos
+//       message.attachment = attachments;
+//     }
+
+//     // Enviar email
+//     const response = await mg.messages.create(config.domain, message);
+
+//     return {
+//       success: true,
+//       messageId: response.id,
+//       providerResponse: response
+//     };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Unknown Mailgun error'
+//     };
+//   }
+// }
 
 /**
  * Envía email a través de SendGrid
