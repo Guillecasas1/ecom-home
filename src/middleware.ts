@@ -5,8 +5,8 @@ import { updateSession } from "@/utils/supabase/middleware";
 const publicRoutes = [
   "/api/webhooks/woocommerce/order-update",
   "/api/cron/process-emails",
-  "/api/analytics/email-tracking/reviews/open",
-  "/api/analytics/email-tracking/reviews/clicks",
+  "/api/analytics/email-tracking/reviews/open/*",
+  "/api/analytics/email-tracking/reviews/clicks/*",
 ];
 
 export async function middleware (request: NextRequest) {
