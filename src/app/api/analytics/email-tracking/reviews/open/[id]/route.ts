@@ -6,15 +6,16 @@ import { NextRequest } from 'next/server';
 
 export async function GET (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Buscar el envío por trackingId
     const [emailSend] = await db
       .select()
       .from(emailSends)
       .where(
-        sql`${emailSends.metadata}->>'trackingId' = ${params.id}`
+        sql`${emailSends.metadata}->>'trackingId' = ${id}`
       )
       .limit(1);
 

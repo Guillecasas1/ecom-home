@@ -6,9 +6,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Obtener la URL original del parámetro de consulta
     const url = new URL(request.url);
     const originalUrl = url.searchParams.get('url');
@@ -22,7 +23,7 @@ export async function GET (
       .select()
       .from(emailSends)
       .where(
-        sql`${emailSends.metadata}->>'trackingId' = ${params.id}`
+        sql`${emailSends.metadata}->>'trackingId' = ${id}`
       )
       .limit(1);
 

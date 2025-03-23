@@ -122,7 +122,10 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
       });
     }
 
-    return result;
+    return {
+      ...result,
+      trackingId
+    };
   } catch (error) {
     console.error("Error in email sender service", { error });
     return {
