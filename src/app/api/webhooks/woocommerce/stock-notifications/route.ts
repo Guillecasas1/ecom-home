@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { z } from "zod";
 
-import { createStockNotification } from "@/lib/services/stock-notifications";
+import { createStockNotification } from "@/modules/mailing/services/stock-notifications";
 import { env } from "@/utils/env/server";
 
 // Esquema para validar las solicitudes entrantes

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { processScheduledEmails } from "@/lib/services/email-scheduler";
+import { processScheduledEmails } from "@/modules/mailing/services/email-scheduler";
 import { env } from "@/utils/env/server";
 
-export async function GET(request: NextRequest) {
+export async function GET (request: NextRequest) {
   const startTime = Date.now();
   console.info("Email processing CRON job started");
 

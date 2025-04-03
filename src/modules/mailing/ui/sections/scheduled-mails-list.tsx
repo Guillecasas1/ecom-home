@@ -1,12 +1,10 @@
 "use client";
 
+import { trpc } from "@/trpc/client";
 import { Suspense } from "react";
-
 import { ErrorBoundary } from "react-error-boundary";
 
 import { DataTableSkeleton } from "@/components/table-skeleton";
-import { trpc } from "@/trpc/client";
-
 import { Automation } from "../../types";
 import { DataTable } from "../components/scheduled-mails-table/table";
 import { emailAutomationsListColumns } from "../components/scheduled-mails-table/table-columns";

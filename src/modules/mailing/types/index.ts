@@ -1,3 +1,7 @@
+import { z } from "zod";
+
+import { stockNotificationsSelectSchema } from "@/db/schema/stock-notifications";
+
 export type TriggerSettings = {
   orderId: number;
   scheduledDate: string;
@@ -85,3 +89,5 @@ export type EmailConfig = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type StockNotification = z.infer<typeof stockNotificationsSelectSchema>;

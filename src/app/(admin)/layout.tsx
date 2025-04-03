@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/modules/admin/ui/components/admin-sidebar";
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout ({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AdminSidebar />

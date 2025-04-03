@@ -4,10 +4,10 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import { automationSteps, emailAutomations, emailSettings, emailTemplates } from "@/db/schema";
-import { prepareAndSendEmail } from "@/lib/services/email-scheduler";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { prepareAndSendEmail } from "../../services/email-scheduler";
 
-import type { Automation, TriggerSettings } from "../types";
+import type { Automation, TriggerSettings } from "../../types";
 
 const triggerSettingsSchema = z.object({
   orderId: z.number(),

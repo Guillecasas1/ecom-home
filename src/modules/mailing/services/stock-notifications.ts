@@ -8,7 +8,7 @@ import {
   stockNotifications,
   subscribers
 } from "@/db/schema";
-import { scheduleEmail } from "@/lib/services/email-scheduler";
+import { scheduleEmail } from "./email-scheduler";
 
 /**
  * Crea una nueva solicitud de notificación de stock
@@ -43,17 +43,6 @@ export async function createStockNotification ({
 
     if (existingSubscriber) {
       subscriberId = existingSubscriber.id;
-
-      // Actualizar información si es necesario
-      if (firstName && !existingSubscriber.firstName) {
-        await db
-          .update(subscribers)
-          .set({
-            firstName,
-            updatedAt: new Date()
-          })
-          .where(eq(subscribers.id, subscriberId));
-      }
     } else {
       // Crear un nuevo suscriptor
       const [newSubscriber] = await db
@@ -96,9 +85,9 @@ export async function createStockNotification ({
     }
 
     // Crear una nueva notificación
-    // Caducidad en 90 días por defecto
+    // Caducidad en 180 días por defecto
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 90);
+    expiresAt.setDate(expiresAt.getDate() + 180);
 
     const [newNotification] = await db
       .insert(stockNotifications)
@@ -115,13 +104,6 @@ export async function createStockNotification ({
         metadata: metadata || {},
       })
       .returning({ id: stockNotifications.id });
-
-    console.info("Stock notification request created", {
-      id: newNotification.id,
-      email,
-      productId,
-      productSku,
-    });
 
     return {
       success: true,

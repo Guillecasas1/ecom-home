@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import crypto from "crypto";
 
-import { processStockRestockEvent } from "@/lib/services/stock-notifications";
+import { processStockRestockEvent } from "@/modules/mailing/services/stock-notifications";
 import { env } from "@/utils/env/server";
 
 export async function POST (request: NextRequest) {

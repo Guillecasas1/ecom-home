@@ -10,8 +10,8 @@ import {
   emailTemplates,
   subscribers,
 } from "@/db/schema";
-import { sendEmail } from "@/lib/services/email-sender";
 import type { Automation, EmailConfig, Step, Template, TriggerSettings } from "@/modules/mailing/types";
+import { sendEmail } from "./email-sender";
 
 /**
  * Procesa los emails programados y los envía cuando sea el momento

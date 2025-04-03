@@ -36,7 +36,7 @@ export const DataTableSkeleton = () => {
 
       {/* Footer de la tabla */}
       <div className="flex items-center justify-end">
-        <Skeleton className="h-8 w-[100px]" />
+        <Skeleton className="h-8 w-[100px] mr-4" />
         <div className="flex gap-2">
           <Skeleton className="h-8 w-8" />
           <Skeleton className="h-8 w-8" />

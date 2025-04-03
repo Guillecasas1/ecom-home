@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import { createSelectSchema } from "drizzle-zod";
 
 import emailSends from "./email-sends";
 import subscribers from "./subscribers";
@@ -31,5 +32,7 @@ export const stockNotificationsRelations = relations(stockNotifications, ({ one,
   // También podemos relacionar con los envíos de email para seguimiento
   emailSends: many(emailSends),
 }));
+
+export const stockNotificationsSelectSchema = createSelectSchema(stockNotifications);
 
 export default stockNotifications;
