@@ -15,18 +15,18 @@ export const SendNowButton = ({ id, status }: SendNowButtonProps) => {
 
   const sendNowMutation = trpc.stockNotifications.sendNow.useMutation({
     onSuccess: () => {
-      utils.reviews.getMany.invalidate();
-      toast.success("Email enviado correctamente");
+      utils.stockNotifications.getMany.invalidate();
+      toast.success("Notificación de stock enviada correctamente");
     },
     onError: (error) => {
-      console.error("Error al enviar el email:", error);
+      console.error("Error al enviar la notificación de stock:", error);
       toast.error(
-        "Ha ocurrido un error al enviar el email. Por favor, inténtelo de nuevo en unos segundos."
+        "Ha ocurrido un error al enviar la notificación. Por favor, inténtelo de nuevo en unos segundos."
       );
     },
   });
 
-  // Solo activar para automatizaciones pendientes
+  // Solo activar para notificaciones pendientes
   const isDisabled = status !== "pending" || sendNowMutation.isPending;
 
   const handleClick = () => {

@@ -1,21 +1,21 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
-import { automationSteps, emailAutomations, emailSettings, emailTemplates, stockNotifications } from "@/db/schema";
+import { emailSettings, emailTemplates, stockNotifications, subscribers } from "@/db/schema";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { prepareAndSendEmail } from "../../services/email-scheduler";
+import { sendEmail } from "../../services/email-sender";
 import { createStockNotification } from "../../services/stock-notifications";
 
-import type { Automation, TriggerSettings } from "../../types";
 import { stockNotificationsSchema } from "../../validations/stock-notifications";
 
 export const stockNotificationsRouter = createTRPCRouter({
   getMany: protectedProcedure.query(async () => {
-    const subscribers = await db.select().from(stockNotifications).orderBy(stockNotifications.id);
-    return subscribers;
+    const notifications = await db.select().from(stockNotifications).orderBy(stockNotifications.id);
+    return notifications;
   }),
+
   create: protectedProcedure.input(stockNotificationsSchema).mutation(async ({ input }) => {
     const { productId, productName, productSku, variant, email, firstName, lastName } = input;
 
@@ -53,109 +53,143 @@ export const stockNotificationsRouter = createTRPCRouter({
       });
     }
   }),
+
   sendNow: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
     const { id } = input;
 
-    // Buscar la automatización y comprobar si es válida en una sola consulta
-    const [automation] = await db
+    // Buscar la notificación de stock
+    const [notification] = await db
       .select()
-      .from(emailAutomations)
-      .where(eq(emailAutomations.id, id))
+      .from(stockNotifications)
+      .where(eq(stockNotifications.id, id))
       .limit(1);
 
-    if (!automation) {
-      throw new TRPCError({ code: "NOT_FOUND" });
-    }
-
-    if (automation.status !== "pending") {
+    if (!notification) {
       throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "La automatización debe estar en estado 'pendiente' para enviar un email",
+        code: "NOT_FOUND",
+        message: "Notificación de stock no encontrada"
       });
     }
 
-    // Realizar todas las consultas en paralelo para mejorar rendimiento
-    const [stepResult, emailConfigResult] = await Promise.all([
-      // Obtener el paso activo
-      db
-        .select()
-        .from(automationSteps)
-        .where(and(eq(automationSteps.automationId, id), eq(automationSteps.isActive, true)))
-        .orderBy(automationSteps.stepOrder)
-        .limit(1),
-
-      // Obtener configuración de email
-      db.select().from(emailSettings).where(eq(emailSettings.isActive, true)).limit(1),
-    ]);
-
-    const [step] = stepResult;
-    const [emailConfig] = emailConfigResult;
-
-    // Validaciones
-    if (!step || step.stepType !== "send_email") {
+    if (notification.status !== "pending") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "No se encontró un paso de tipo 'send_email' para la automatización",
+        message: "La notificación debe estar en estado 'pendiente' para enviar un email",
       });
     }
+
+    // Obtener el suscriptor asociado
+    const [subscriber] = await db
+      .select()
+      .from(subscribers)
+      .where(eq(subscribers.id, notification.subscriberId))
+      .limit(1);
+
+    if (!subscriber) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Suscriptor no encontrado"
+      });
+    }
+
+    // Obtener la plantilla de email para notificaciones de stock
+    const [template] = await db
+      .select()
+      .from(emailTemplates)
+      .where(eq(emailTemplates.name, "Stock notification"))
+      .limit(1);
+
+    if (!template) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Plantilla 'Stock notification' no encontrada",
+      });
+    }
+
+    // Obtener configuración de email
+    const [emailConfig] = await db
+      .select()
+      .from(emailSettings)
+      .where(eq(emailSettings.isActive, true))
+      .limit(1);
 
     if (!emailConfig) {
       throw new TRPCError({
-        code: "BAD_REQUEST",
+        code: "NOT_FOUND",
         message: "No se encontró una configuración de email activa",
       });
     }
 
-    // Obtener la plantilla si existe (solo si hay templateId)
-    let template = null;
-    if (step.templateId) {
-      [template] = await db
-        .select()
-        .from(emailTemplates)
-        .where(eq(emailTemplates.id, step.templateId))
-        .limit(1);
-    }
-
-    const triggerSettings = automation.triggerSettings as TriggerSettings;
-
     try {
-      // Intentar enviar el email
-      const emailResult = await prepareAndSendEmail(
-        automation as Automation,
-        step,
-        template,
-        triggerSettings,
-        emailConfig
-      );
+      // Personalizar el contenido del email
+      let emailContent = template.content;
+      let emailSubject = template.subject;
+
+      // Función para personalizar el contenido
+      const personalizeContent = (content: string) => {
+        const currentDate = new Date();
+        return content
+          .replace(/{{subscriberId}}/g, notification.subscriberId.toString())
+          .replace(/{{firstName}}/g, subscriber.firstName || "")
+          .replace(/{{lastName}}/g, subscriber.lastName || "")
+          .replace(/{{email}}/g, subscriber.email)
+          .replace(/{{productId}}/g, notification.productId.toString())
+          .replace(/{{productName}}/g, notification.productName)
+          .replace(/{{productSku}}/g, notification.productSku)
+          .replace(/{{variant}}/g, notification.variant || "")
+          .replace(/{{currentDate}}/g, currentDate.toLocaleDateString())
+          .replace(/{{currentYear}}/g, currentDate.getFullYear().toString());
+      };
+
+      // Personalizar el contenido y asunto
+      emailContent = personalizeContent(emailContent);
+      emailSubject = personalizeContent(emailSubject);
+
+      // Enviar el email
+      const emailResult = await sendEmail({
+        to: subscriber.email,
+        subject: emailSubject,
+        html: emailContent,
+        from: {
+          name: emailConfig.defaultFromName,
+          email: emailConfig.defaultFromEmail,
+        },
+        replyTo: emailConfig.defaultReplyTo || emailConfig.defaultFromEmail,
+        metadata: {
+          notificationId: notification.id,
+          subscriberId: subscriber.id,
+          productId: notification.productId,
+          productName: notification.productName,
+        },
+      });
 
       if (!emailResult.success) {
-        throw new Error(`Error al enviar el email: ${emailResult.error}`);
+        throw new Error(emailResult.error ? String(emailResult.error) : "Error al enviar el email");
       }
 
-      // Actualizar el estado de la automatización a completado
+      // Actualizar el estado de la notificación a "notified"
       await db
-        .update(emailAutomations)
+        .update(stockNotifications)
         .set({
-          status: "completed",
-          isActive: false,
-          updatedAt: new Date(), // Añadir fecha de actualización
+          status: "notified",
+          notifiedAt: new Date(),
         })
-        .where(eq(emailAutomations.id, id));
+        .where(eq(stockNotifications.id, id));
 
       return {
         success: true,
-        message: "Email enviado correctamente",
-        emailId: emailResult.success,
+        message: "Email de notificación de stock enviado correctamente",
       };
     } catch (error) {
-      // Log detallado del error para depuración
-      console.error("Error al enviar email manualmente:", {
-        automationId: id,
+      console.error("Error al enviar notificación de stock:", {
+        notificationId: id,
         error: error instanceof Error ? error.message : "Error desconocido",
-        context: "sendNow mutation",
       });
 
-      throw error;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Error al enviar la notificación",
+      });
     }
   }),
 });

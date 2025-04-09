@@ -15,8 +15,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { StockNotification } from "@/modules/mailing/types";
 import { SendNowButton } from "./send-now-btn";
 
-// Producto, variante, reservado desde, notificado, acciones
-
 export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
   {
     accessorKey: "productName",
@@ -37,7 +35,27 @@ export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
       const notification = row.original;
       return (
         <div className="pl-2">
-          <span>{notification.variant}</span>
+          <span>{notification.variant || "N/A"}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "requestDate",
+    header: "Solicitado el",
+    cell: ({ row }) => {
+      const notification = row.original;
+      return (
+        <div>
+          <span>
+            {notification.requestDate
+              ? new Date(notification.requestDate).toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+              : 'Sin fecha'}
+          </span>
         </div>
       );
     },
@@ -47,7 +65,7 @@ export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
     header: "Estado",
     filterFn: 'includesString',
     cell: ({ row }) => {
-      const automation = row.original;
+      const notification = row.original;
 
       // Definir los datos del estado (texto y color)
       const statusData: Record<string, { text: string; color: string }> = {
@@ -55,19 +73,19 @@ export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
           text: "pendiente",
           color: "bg-yellow-200 text-yellow-800",
         },
-        paused: {
-          text: "pausado",
-          color: "bg-red-200 text-red-800",
-        },
-        completed: {
-          text: "completado",
+        notified: {
+          text: "notificado",
           color: "bg-green-200 text-green-800",
+        },
+        cancelled: {
+          text: "cancelado",
+          color: "bg-red-200 text-red-800",
         },
       };
 
       // Obtener los datos del estado actual o usar un valor por defecto
-      const currentStatus = statusData[automation.status as keyof typeof statusData] || {
-        text: automation.status,
+      const currentStatus = statusData[notification.status as keyof typeof statusData] || {
+        text: notification.status,
         color: "bg-gray-200 text-gray-800",
       };
 
@@ -76,6 +94,26 @@ export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
           className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-semibold ${currentStatus.color}`}
         >
           {currentStatus.text}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "notifiedAt",
+    header: "Notificado el",
+    cell: ({ row }) => {
+      const notification = row.original;
+      return (
+        <div>
+          <span>
+            {notification.notifiedAt
+              ? new Date(notification.notifiedAt).toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+              : 'No enviado'}
+          </span>
         </div>
       );
     },
@@ -91,13 +129,13 @@ export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
     },
     cell: ({ row }) => {
       const isMobile = useIsMobile();
-      const automation = row.original;
+      const notification = row.original;
 
       return (
         <div className="w-full pr-2 text-right">
           {!isMobile ? (
             <>
-              <SendNowButton id={automation.id} status={automation.status} />
+              <SendNowButton id={notification.id} status={notification.status} />
             </>
           ) : (
             <DropdownMenu>
@@ -108,22 +146,21 @@ export const stockNotificationsListColumns: ColumnDef<StockNotification>[] = [
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {automation.status === "pending" && (
-                  <DropdownMenuItem onClick={() => { }} className="cursor-pointer">
-                    {/* {isProcessing ? "Procesando..." : "Enviar ahora"} */}
+                {notification.status === "pending" && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      document.getElementById(`send-now-button-${notification.id}`)?.click();
+                    }}
+                    className="cursor-pointer"
+                  >
+                    Enviar ahora
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => { }} className="cursor-pointer">
-                  {automation.status === "paused" ? "Iniciar automatización" : "Pausar automatización"}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    document.getElementById(`edit-dialog-trigger-${automation.id}`)?.click();
-                  }}
                   className="cursor-pointer"
                 >
-                  Editar
+                  Ver detalles
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
