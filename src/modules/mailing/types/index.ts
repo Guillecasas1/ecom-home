@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { stockNotificationsSelectSchema } from "@/db/schema/stock-notifications";
+import { subscribersSelectSchema } from "@/db/schema/subscribers";
 
 export type TriggerSettings = {
   orderId: number;
@@ -27,6 +28,7 @@ export type EmailOptions = {
   }>;
   // eslint-disable-next-line
   metadata?: Record<string, any>;
+  headers?: Record<string, string>;
   trackOpens?: boolean;
   trackClicks?: boolean;
 };
@@ -91,3 +93,4 @@ export type EmailConfig = {
 };
 
 export type StockNotification = z.infer<typeof stockNotificationsSelectSchema>;
+export type Subscriber = z.infer<typeof subscribersSelectSchema>;

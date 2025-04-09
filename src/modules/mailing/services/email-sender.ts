@@ -8,19 +8,37 @@ import type { EmailOptions, EmailResult } from "@/modules/mailing/types";
 
 // import Mailgun from 'mailgun.js';
 
-function addTrackingToEmail (html: string, trackingId: string): string {
-  // Añadir pixel invisible para seguimiento de aperturas
-  const trackingPixel = `<img src="https://ecom-home.vercel.app/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
+function addTrackingToEmail (html: string, trackingId: string, subscriberId: number, recipientEmail: string): string {
+  // Base URL for the application
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ecom-home.vercel.app";
+
+  // Add unsubscribe link to the email
+  const unsubscribeUrl = `${baseUrl}/api/unsubscribe/${trackingId}?sid=${subscriberId}&source=email_link`;
+  const managePreferencesUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(recipientEmail)}`;
+
+  // Simple HTML code for the unsubscribe footer
+  const unsubscribeFooter = `
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
+      <p>Si no deseas recibir más emails como este, puedes <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">darte de baja aquí</a> o <a href="${managePreferencesUrl}" style="color: #666; text-decoration: underline;">gestionar tus preferencias</a>.</p>
+    </div>
+  `;
+
+  // Add the unsubscribe footer before the closing body tag
+  html = html.replace(/<\/body>/i, `${unsubscribeFooter}</body>`);
+
+  // Add pixel invisible for open tracking
+  const trackingPixel = `<img src="${baseUrl}/api/analytics/email-tracking/reviews/open/${trackingId}" width="1" height="1" alt="" style="display:none;">`;
   html = html.replace(/<\/body>/i, `${trackingPixel}</body>`);
-  // Reescribir enlaces para seguimiento de clics
+
+  // Rewrite links for click tracking
   const regex = /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/gi;
   html = html.replace(regex, (match, quote, url) => {
-    // No modificar enlaces de baja (unsubscribe) o enlaces que ya tienen seguimiento
-    if (url.includes('/unsubscribe') || url.includes('/api/tracking/')) {
+    // Don't modify unsubscribe links or links that already have tracking
+    if (url.includes('/unsubscribe') || url.includes('/api/tracking/') || url.includes('mailto:')) {
       return match;
     }
     const encodedUrl = encodeURIComponent(url);
-    return `<a href=${quote}https://ecom-home.vercel.app/api/analytics/email-tracking/reviews/clicks/${trackingId}?url=${encodedUrl}${quote}`;
+    return `<a href=${quote}${baseUrl}/api/analytics/email-tracking/reviews/clicks/${trackingId}?url=${encodedUrl}${quote}`;
   });
 
   return html;
@@ -51,6 +69,9 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
       throw new Error("Missing required email parameters: to, subject, or html");
     }
 
+    // Get subscriber ID from metadata or use 0 as fallback
+    const subscriberId = options.metadata?.subscriberId || 0;
+
     // Preparar opciones con valores por defecto
     const emailOptions = {
       ...options,
@@ -61,10 +82,21 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
       replyTo: options.replyTo || emailConfig.defaultReplyTo || emailConfig.defaultFromEmail,
       trackOpens: options.trackOpens !== undefined ? options.trackOpens : true,
       trackClicks: options.trackClicks !== undefined ? options.trackClicks : true,
+      headers: {
+        ...options.headers,
+        "List-Unsubscribe": `<mailto:${emailConfig.defaultFromEmail}?subject=unsubscribe>, <${process.env.NEXT_PUBLIC_APP_URL || "https://ecom-home.vercel.app"}/unsubscribe?email=${encodeURIComponent(typeof options.to === "string" ? options.to : options.to[0])}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+      }
     };
 
-    const trackingId = crypto.randomUUID()
-    emailOptions.html = addTrackingToEmail(emailOptions.html, trackingId);
+    const trackingId = crypto.randomUUID();
+    const recipientEmail = typeof emailOptions.to === "string" ? emailOptions.to : emailOptions.to[0];
+    emailOptions.html = addTrackingToEmail(
+      emailOptions.html,
+      trackingId,
+      subscriberId,
+      recipientEmail
+    );
 
     emailOptions.metadata = {
       ...emailOptions.metadata,
@@ -101,7 +133,8 @@ export async function sendEmail (options: EmailOptions): Promise<EmailResult> {
         to: typeof emailOptions.to === "string" ? emailOptions.to : emailOptions.to.join(", "),
         subject: emailOptions.subject,
         messageId: result.messageId,
-        trackingId
+        trackingId,
+        subscriberId
       });
     } else {
       console.error("Failed to send email", {
@@ -173,19 +206,22 @@ async function sendViaSmtp (
       text: options.text || "",
       replyTo: options.replyTo || options.from.email,
       attachments: options.attachments || [],
+      headers: options.headers || {},
       // Añadir cabeceras de seguimiento si es necesario
-      headers: {
-        "X-Entity-Ref-ID": options.metadata?.messageId || Date.now().toString(),
-        ...(options.metadata
-          ? Object.entries(options.metadata).reduce(
-            (acc, [key, value]) => {
-              acc[`X-Metadata-${key}`] = typeof value === "string" ? value : JSON.stringify(value);
-              return acc;
-            },
-            {} as Record<string, string>
-          )
-          : {}),
-      },
+      ...('headers' in options ? {} : {
+        headers: {
+          "X-Entity-Ref-ID": options.metadata?.messageId || Date.now().toString(),
+          ...(options.metadata
+            ? Object.entries(options.metadata).reduce(
+              (acc, [key, value]) => {
+                acc[`X-Metadata-${key}`] = typeof value === "string" ? value : JSON.stringify(value);
+                return acc;
+              },
+              {} as Record<string, string>
+            )
+            : {}),
+        }
+      })
     };
 
     // Enviar email

@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { boolean, jsonb, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import { createSelectSchema } from "drizzle-zod";
 
 import subscriberLists from "./subscriber-lists";
 
@@ -20,5 +21,7 @@ const subscribers = pgTable("subscribers", {
 export const subscribersRelations = relations(subscribers, ({ many }) => ({
   listRelations: many(subscriberLists),
 }));
+
+export const subscribersSelectSchema = createSelectSchema(subscribers);
 
 export default subscribers;

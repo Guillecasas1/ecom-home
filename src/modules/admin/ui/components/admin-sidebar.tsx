@@ -55,6 +55,10 @@ const data = {
           title: "Stock notifications",
           url: "/admin/mailing/stock-notifications",
         },
+        {
+          title: "Subscribers",
+          url: "/admin/mailing/subscribers",
+        },
       ],
     },
     {
