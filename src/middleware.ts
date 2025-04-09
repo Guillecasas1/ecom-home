@@ -7,6 +7,9 @@ const publicPatterns = [
   "/api/cron/process-emails",
   "/api/analytics/email-tracking/reviews/open/",
   "/api/analytics/email-tracking/reviews/clicks/",
+  "/api/mail/list-unsubscribe",
+  "/api/unsubscribe/email",
+  "/api/unsubscribe/",
 ];
 
 export async function middleware (request: NextRequest) {
