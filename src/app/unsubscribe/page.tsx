@@ -1,9 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -28,15 +26,46 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-const unsubscribeSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  reason: z.string().min(1, "Please select a reason"),
-  comments: z.string().optional(),
-});
-
-type UnsubscribeFormValues = z.infer<typeof unsubscribeSchema>;
-
+// Componente principal que envuelve el contenido en un Suspense
 export default function UnsubscribePage () {
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center bg-[url(https://grainy-gradients.vercel.app/noise.svg)] bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-gray-100 via-gray-200 to-gray-300">
+      <div className="absolute inset-0 opacity-25 brightness-100 contrast-150" />
+      <Suspense fallback={<LoadingCard />}>
+        <UnsubscribeForm />
+      </Suspense>
+    </div>
+  );
+}
+
+// Componente de carga mientras se resuelve el Suspense
+function LoadingCard () {
+  return (
+    <Card className="max-w-md z-10 w-full">
+      <CardHeader>
+        <CardTitle className="text-center">Loading...</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Componente que contiene el formulario y utiliza useSearchParams
+function UnsubscribeForm () {
+  const { useRouter, useSearchParams } = require("next/navigation");
+
+  const unsubscribeSchema = z.object({
+    email: z.string().email("Please enter a valid email address"),
+    reason: z.string().min(1, "Please select a reason"),
+    comments: z.string().optional(),
+  });
+
+  type UnsubscribeFormValues = z.infer<typeof unsubscribeSchema>;
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
@@ -84,77 +113,74 @@ export default function UnsubscribePage () {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[url(https://grainy-gradients.vercel.app/noise.svg)] bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-gray-100 via-gray-200 to-gray-300">
-      <div className="absolute inset-0 opacity-25 brightness-100 contrast-150" />
-      <Card className="max-w-md z-10 w-full">
-        <CardHeader>
-          <CardTitle className="text-center">Unsubscribe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
+    <Card className="max-w-md z-10 w-full">
+      <CardHeader>
+        <CardTitle className="text-center">Unsubscribe</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="your-email@example.com" type="email" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reason for unsubscribing</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <Input {...field} placeholder="your-email@example.com" type="email" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a reason" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="reason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason for unsubscribing</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a reason" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="too_many_emails">Too many emails</SelectItem>
-                        <SelectItem value="not_relevant">Content not relevant</SelectItem>
-                        <SelectItem value="never_signed_up">I never signed up</SelectItem>
-                        <SelectItem value="other">Other reason</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="comments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Additional comments (optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Please tell us how we could improve..."
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <CardFooter className="flex justify-center px-0 pt-2">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Processing..." : "Unsubscribe"}
-                </Button>
-              </CardFooter>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+                    <SelectContent>
+                      <SelectItem value="too_many_emails">Too many emails</SelectItem>
+                      <SelectItem value="not_relevant">Content not relevant</SelectItem>
+                      <SelectItem value="never_signed_up">I never signed up</SelectItem>
+                      <SelectItem value="other">Other reason</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="comments"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Additional comments (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Please tell us how we could improve..."
+                      rows={3}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <CardFooter className="flex justify-center px-0 pt-2">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : "Unsubscribe"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
