@@ -1,7 +1,5 @@
-import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function UnsubscribedPage () {
   return (
@@ -18,13 +16,6 @@ export default function UnsubscribedPage () {
             You will no longer receive marketing emails from us. If this was a mistake or you change your mind, you can contact us to resubscribe.
           </p>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button asChild>
-            <Link href="/">
-              Return to home
-            </Link>
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
