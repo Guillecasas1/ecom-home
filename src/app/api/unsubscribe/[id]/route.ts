@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { eq, sql } from "drizzle-orm";
 
@@ -8,10 +7,10 @@ import { emailEvents, emailSends, subscribers } from "@/db/schema";
 
 export async function GET (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const url = new URL(request.url);
     const subscriberId = url.searchParams.get("sid");
     const source = url.searchParams.get("source") || "unknown";
@@ -19,7 +18,7 @@ export async function GET (
 
     if (!subscriberId) {
       console.error("Missing subscriber ID in unsubscribe request");
-      return redirect("/error?reason=invalid_request");
+      return NextResponse.redirect("/error?reason=invalid_request");
     }
 
     // Find the subscriber
@@ -31,7 +30,7 @@ export async function GET (
 
     if (!subscriber) {
       console.error(`Subscriber with ID ${subscriberId} not found`);
-      return redirect("/error?reason=subscriber_not_found");
+      return NextResponse.redirect("/error?reason=subscriber_not_found");
     }
 
     // Attempt to find the related email send using the tracking ID
@@ -74,9 +73,9 @@ export async function GET (
 
     // Return success with a redirect to a thank you page
     console.info(`Subscriber ${subscriber.email} has been unsubscribed successfully`);
-    return redirect(redirectUrl);
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   } catch (error) {
     console.error("Error processing unsubscribe request:", error);
-    return redirect("/error?reason=server_error");
+    return NextResponse.redirect(new URL("/error?reason=server_error", request.url));
   }
 }
