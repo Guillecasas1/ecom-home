@@ -5,21 +5,39 @@ import { updateSession } from "@/utils/supabase/middleware";
 const publicPatterns = [
   "/api/webhooks/woocommerce/order-update",
   "/api/cron/process-emails",
-  "/api/analytics/email-tracking/reviews/open/",
-  "/api/analytics/email-tracking/reviews/clicks/",
+  "/api/analytics/email-tracking/reviews/open",
+  "/api/analytics/email-tracking/reviews/clicks",
   "/api/mail/list-unsubscribe",
   "/api/unsubscribe/email",
-  "/api/unsubscribe/",
+  "/unsubscribe",
+  "/unsubscribed",
+  "/error",
+];
+
+// Páginas y endpoints públicos adicionales para unsubscribe
+const publicPrefixes = [
+  "/api/unsubscribe/"
 ];
 
 export async function middleware (request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublicRoute = publicPatterns.some(pattern =>
-    pathname === pattern || pathname.startsWith(pattern)
-  );
+  // Verificar si la ruta coincide exactamente con alguna de las rutas públicas
+  if (publicPatterns.includes(pathname)) {
+    return;
+  }
 
-  if (isPublicRoute) {
+  // Verificar si la ruta comienza con alguno de los prefijos públicos
+  if (publicPrefixes.some(prefix => pathname.startsWith(prefix))) {
+    return;
+  }
+
+  // Verificar para rutas dinámicas específicas con segmentos variables
+  if (
+    pathname.match(/^\/api\/analytics\/email-tracking\/reviews\/open\/.*/) ||
+    pathname.match(/^\/api\/analytics\/email-tracking\/reviews\/clicks\/.*/) ||
+    pathname.match(/^\/api\/unsubscribe\/[^\/]+$/)
+  ) {
     return;
   }
 
