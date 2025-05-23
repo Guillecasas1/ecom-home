@@ -16,6 +16,7 @@ import { scheduleEmail } from "./email-scheduler";
 export async function createStockNotification ({
   email,
   firstName,
+  lastName,
   productId,
   productName,
   productSku,
@@ -23,7 +24,8 @@ export async function createStockNotification ({
   metadata,
 }: {
   email: string;
-  firstName?: string;
+  firstName: string;
+  lastName: string;
   productId: number;
   productName: string;
   productSku: string;
@@ -50,6 +52,7 @@ export async function createStockNotification ({
         .values({
           email,
           firstName: firstName || null,
+          lastName: lastName || null,
           source: "stock_notification",
           customAttributes: {
             lastStockRequest: new Date().toISOString(),

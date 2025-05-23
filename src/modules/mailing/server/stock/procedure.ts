@@ -23,6 +23,7 @@ export const stockNotificationsRouter = createTRPCRouter({
       const result = await createStockNotification({
         email,
         firstName,
+        lastName: lastName || "",
         productId: parseInt(productId, 10),
         productName,
         productSku,
