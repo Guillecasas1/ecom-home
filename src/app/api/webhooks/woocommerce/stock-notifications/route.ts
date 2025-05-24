@@ -18,6 +18,8 @@ export async function POST (request: NextRequest) {
     // Parsear el cuerpo de la solicitud
     const body = await request.json();
 
+    console.log("Stock notification event received", body);
+
     // Validar con el esquema
     const result = stockNotificationSchema.safeParse(body);
 
@@ -40,7 +42,7 @@ export async function POST (request: NextRequest) {
       productSku,
       variant,
       metadata: {
-        source: "n8n_webhook",
+        source: "woo_stock_notifications_plugin",
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
         userAgent: request.headers.get("user-agent") || "unknown",
       },
