@@ -43,7 +43,7 @@ export async function POST (request: NextRequest) {
         return NextResponse.json({ error: result.error }, { status: 200 });
       }
 
-      console.log("Stock update event received", data);
+      console.log("Response from processStockRestockEvent", result);
 
       return NextResponse.json({
         success: true,

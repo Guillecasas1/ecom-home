@@ -169,6 +169,8 @@ export async function processStockRestockEvent ({
         )
       );
 
+    console.log("Pending notifications", pendingNotifications);
+
     if (pendingNotifications.length === 0) {
       return { success: true, notificationsSent: 0 };
     }
