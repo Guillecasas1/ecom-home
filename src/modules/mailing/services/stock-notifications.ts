@@ -127,12 +127,14 @@ export async function createStockNotification ({
 export async function processStockRestockEvent ({
   productId,
   productSku,
+  productName,
   variant,
   quantity,
   metadata,
 }: {
   productId: number;
   productSku: string;
+  productName: string;
   variant?: string;
   quantity: number;
   metadata?: Record<string, any>;
@@ -154,22 +156,13 @@ export async function processStockRestockEvent ({
       return { success: true, notificationsSent: 0 };
     }
 
-    console.log("Processing stock restock event for product", productId);
-
     // Obtener todas las notificaciones pendientes para este producto
-    console.log("Buscando notificaciones con los siguientes criterios:", {
-      productId,
-      variant,
-      status: "pending",
-      isActive: true
-    });
-
     const pendingNotifications = await db
       .select()
       .from(stockNotifications)
       .where(
         and(
-          eq(stockNotifications.productId, productId),
+          eq(stockNotifications.productName, productName),
           eq(stockNotifications.status, "pending"),
           eq(stockNotifications.isActive, true),
           variant
@@ -177,15 +170,6 @@ export async function processStockRestockEvent ({
             : isNull(stockNotifications.variant)
         )
       );
-
-    // Verificar los registros existentes para este producto
-    const allProductNotifications = await db
-      .select()
-      .from(stockNotifications)
-      .where(eq(stockNotifications.productId, productId));
-
-    console.log("Todas las notificaciones para este producto:", allProductNotifications);
-    console.log("Notificaciones pendientes encontradas:", pendingNotifications);
 
     if (pendingNotifications.length === 0) {
       return { success: true, notificationsSent: 0 };

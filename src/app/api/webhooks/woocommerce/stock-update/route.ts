@@ -29,6 +29,7 @@ export async function POST (request: NextRequest) {
       const result = await processStockRestockEvent({
         productId: data.product_id,
         productSku: data.sku,
+        productName: data.product_name,
         variant: undefined,
         quantity: data.stock_quantity,
         metadata: {
