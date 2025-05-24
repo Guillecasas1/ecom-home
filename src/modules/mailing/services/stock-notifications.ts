@@ -8,7 +8,7 @@ import {
   stockNotifications,
   subscribers
 } from "@/db/schema";
-import { scheduleEmail } from "./email-scheduler";
+import { sendEmail } from "./email-sender";
 
 /**
  * Crea una nueva solicitud de notificación de stock
@@ -199,7 +199,7 @@ export async function processStockRestockEvent ({
 
     let notificationsSent = 0;
 
-    // Para cada notificación pendiente, programar un email
+    // Para cada notificación pendiente, enviar el email inmediatamente
     for (const notification of pendingNotifications) {
       // Obtener datos del suscriptor
       const [subscriber] = await db
@@ -212,14 +212,18 @@ export async function processStockRestockEvent ({
         continue;
       }
 
-      // Programar el email para envío inmediato (0 días de retraso)
-      const emailResult = await scheduleEmail({
-        templateId: stockTemplate.id,
-        subscriberId: subscriber.id,
-        delayDays: 0, // Envío inmediato
+      // Enviar el email inmediatamente
+      const emailResult = await sendEmail({
+        to: subscriber.email,
         subject: `¡${notification.productName} ya está disponible!`,
+        html: stockTemplate.content,
+        from: {
+          name: "Tu Tienda",
+          email: process.env.DEFAULT_FROM_EMAIL || "noreply@tutienda.com"
+        },
         metadata: {
           notificationId: notification.id,
+          subscriberId: subscriber.id,
           productId: notification.productId,
           productName: notification.productName,
           productSku: notification.productSku,
