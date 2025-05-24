@@ -156,6 +156,13 @@ export async function processStockRestockEvent ({
       return { success: true, notificationsSent: 0 };
     }
 
+    console.log("Buscando notificaciones con los siguientes criterios:", {
+      productName,
+      variant,
+      status: "pending",
+      isActive: true
+    });
+
     // Obtener todas las notificaciones pendientes para este producto
     const pendingNotifications = await db
       .select()
@@ -170,6 +177,8 @@ export async function processStockRestockEvent ({
             : isNull(stockNotifications.variant)
         )
       );
+
+    console.log("Notificaciones encontradas", pendingNotifications);
 
     if (pendingNotifications.length === 0) {
       return { success: true, notificationsSent: 0 };
