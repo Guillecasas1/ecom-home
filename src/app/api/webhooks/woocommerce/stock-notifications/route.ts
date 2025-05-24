@@ -9,7 +9,7 @@ const stockNotificationSchema = z.object({
   lastName: z.string().optional(),
   productId: z.number().int().positive("ID de producto inválido"),
   productName: z.string().min(1, "Nombre de producto requerido"),
-  productSku: z.string().min(1, "SKU de producto requerido"),
+  productSku: z.string().optional(),
   variant: z.string().optional(),
 });
 
@@ -55,7 +55,7 @@ export async function POST (request: NextRequest) {
       lastName: lastName || "",
       productId,
       productName,
-      productSku,
+      productSku: productSku || "",
       variant,
       metadata: {
         source: "woo_stock_notifications_plugin",
