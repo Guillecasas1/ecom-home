@@ -13,6 +13,17 @@ const stockNotificationSchema = z.object({
   variant: z.string().optional(),
 });
 
+export async function OPTIONS (request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': 'https://labatitapresumida.com',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST (request: NextRequest) {
   try {
     // Parsear el cuerpo de la solicitud
@@ -26,7 +37,12 @@ export async function POST (request: NextRequest) {
     if (!result.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: result.error.format() },
-        { status: 400 }
+        {
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://labatitapresumida.com',
+          },
+        }
       );
     }
 
