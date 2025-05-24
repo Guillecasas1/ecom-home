@@ -4,6 +4,7 @@ import { updateSession } from "@/utils/supabase/middleware";
 
 const publicPatterns = [
   "/api/webhooks/woocommerce/order-update",
+  "/api/webhooks/woocommerce/stock-update",
   "/api/webhooks/woocommerce/stock-notifications",
   "/api/cron/process-emails",
   "/api/analytics/email-tracking/reviews/open",
