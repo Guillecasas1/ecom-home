@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { processStockRestockEvent } from "@/modules/mailing/services/stock-notifications";
 
 interface StockUpdateEvent {
   product_id: number;
@@ -24,37 +25,37 @@ export async function POST (request: NextRequest) {
 
     const data = await request.json() as StockUpdateEvent;
 
-    // // Solo procesamos si hay stock disponible
-    // if (quantity > 0) {
-    //   // Procesar el evento de reposición de stock
-    //   const result = await processStockRestockEvent({
-    //     productId,
-    //     productSku,
-    //     variant: variant !== null ? variant : undefined,
-    //     quantity,
-    //     metadata: {
-    //       productName: data.name,
-    //       price: data.price,
-    //       productUrl: data.permalink,
-    //       imageUrl: data.images?.[0]?.src,
-    //     },
-    //   });
+    // Solo procesamos si hay stock disponible
+    if (data.stock_quantity > 0) {
+      // Procesar el evento de reposición de stock
+      const result = await processStockRestockEvent({
+        productId: data.product_id,
+        productSku: data.sku,
+        variant: undefined,
+        quantity: data.stock_quantity,
+        metadata: {
+          productName: data.product_name,
+          productUrl: data.product_url,
+        },
+      });
 
-    // if (!result.success) {
-    //   console.error("Error processing stock restock event", {
-    //     error: result.error,
-    //     productId
-    //   });
-    //   return NextResponse.json({ error: result.error }, { status: 200 });
-    // }
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 200 });
+      }
 
-    console.log("Stock update event received", data);
+      console.log("Stock update event received", data);
+
+      return NextResponse.json({
+        success: true,
+        message: "Stock restock event processed",
+        notificationsSent: result.notificationsSent,
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Stock restock event processed",
-      // notificationsSent: result.notificationsSent,
-      data: data,
+      message: "Stock restock event processed (no stock available)",
+      notificationsSent: false,
     });
   } catch (error) {
     console.error("Error processing WooCommerce stock webhook:", error);
