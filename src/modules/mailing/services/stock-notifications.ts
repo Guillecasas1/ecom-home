@@ -218,8 +218,8 @@ export async function processStockRestockEvent ({
         subject: `¡${notification.productName} ya está disponible!`,
         html: stockTemplate.content,
         from: {
-          name: "Tu Tienda",
-          email: process.env.DEFAULT_FROM_EMAIL || "noreply@tutienda.com"
+          name: "La Batita Presumida",
+          email: "hola@labatitapresumida.com"
         },
         metadata: {
           notificationId: notification.id,
