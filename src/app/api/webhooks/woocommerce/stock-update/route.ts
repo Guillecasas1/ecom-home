@@ -25,9 +25,7 @@ export async function POST (request: NextRequest) {
 
     const data = await request.json() as StockUpdateEvent;
 
-    // Solo procesamos si hay stock disponible
     if (data.stock_quantity > 0) {
-      // Procesar el evento de reposición de stock
       const result = await processStockRestockEvent({
         productId: data.product_id,
         productSku: data.sku,
