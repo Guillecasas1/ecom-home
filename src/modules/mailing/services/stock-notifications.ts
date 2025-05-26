@@ -1,5 +1,5 @@
 // lib/services/stock-notification-service.ts
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -172,9 +172,6 @@ export async function processStockRestockEvent ({
           eq(stockNotifications.productName, productName),
           eq(stockNotifications.status, "pending"),
           eq(stockNotifications.isActive, true),
-          variant
-            ? eq(stockNotifications.variant, variant)
-            : isNull(stockNotifications.variant)
         )
       );
 
