@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
@@ -12,7 +12,7 @@ import { stockNotificationsSchema } from "../../validations/stock-notifications"
 
 export const stockNotificationsRouter = createTRPCRouter({
   getMany: protectedProcedure.query(async () => {
-    const notifications = await db.select().from(stockNotifications).orderBy(stockNotifications.id);
+    const notifications = await db.select().from(stockNotifications).orderBy(desc(stockNotifications.id));
     return notifications;
   }),
 
