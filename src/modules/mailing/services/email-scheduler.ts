@@ -1,5 +1,5 @@
 // lib/services/email-scheduler.ts
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -15,10 +15,12 @@ import { sendEmail } from "./email-sender";
 
 /**
  * Procesa los emails programados y los envía cuando sea el momento
+ * Implementa bloqueo optimista para evitar race conditions en ejecuciones concurrentes
  */
 export async function processScheduledEmails () {
   const now = new Date();
-  console.info("Starting scheduled email processing");
+  const processId = crypto.randomUUID().slice(0, 8); // ID único para esta ejecución
+  console.info(`[${processId}] Starting scheduled email processing`);
 
   try {
     // Obtener configuración de email activa
@@ -32,7 +34,8 @@ export async function processScheduledEmails () {
       throw new Error("No active email configuration found");
     }
 
-    // Buscar todas las automatizaciones activas de tipo order_completed
+    // Buscar todas las automatizaciones activas de tipo order_completed que estén pendientes
+    // Excluimos las que están en "processing" para evitar duplicados
     const activeAutomations = (await db
       .select()
       .from(emailAutomations)
@@ -44,13 +47,14 @@ export async function processScheduledEmails () {
         )
       )) as Automation[];
 
-    console.info(`Found ${activeAutomations.length} active automations to process`);
+    console.info(`[${processId}] Found ${activeAutomations.length} active automations to process`);
 
     const results = {
       processed: 0,
       sent: 0,
       failed: 0,
       skipped: 0,
+      alreadyProcessing: 0,
     };
 
     for (const automation of activeAutomations) {
@@ -59,7 +63,7 @@ export async function processScheduledEmails () {
         const triggerSettings = automation.triggerSettings as TriggerSettings;
 
         if (!triggerSettings || !triggerSettings.scheduledDate) {
-          console.warn("Automation has invalid trigger settings", {
+          console.warn(`[${processId}] Automation has invalid trigger settings`, {
             automationId: automation.id,
           });
           results.skipped++;
@@ -73,6 +77,31 @@ export async function processScheduledEmails () {
           continue;
         }
 
+        // ✅ BLOQUEO OPTIMISTA: Intentar marcar como "processing" solo si está en "pending"
+        // Esto previene race conditions cuando el CRON se ejecuta múltiples veces
+        const lockResult = await db
+          .update(emailAutomations)
+          .set({
+            status: "processing",
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(emailAutomations.id, automation.id),
+              eq(emailAutomations.status, "pending") // Solo si sigue en pending
+            )
+          )
+          .returning({ id: emailAutomations.id });
+
+        // Si no se actualizó ninguna fila, significa que otro proceso ya lo está manejando
+        if (lockResult.length === 0) {
+          console.info(`[${processId}] Automation ${automation.id} already being processed by another instance`);
+          results.alreadyProcessing++;
+          continue;
+        }
+
+        console.info(`[${processId}] Acquired lock for automation ${automation.id}, order ${triggerSettings.orderId}`);
+
         // Obtener los pasos activos para esta automatización
         const [step] = await db
           .select()
@@ -82,15 +111,19 @@ export async function processScheduledEmails () {
           .limit(1);
 
         if (!step || step.stepType !== "send_email") {
-          console.warn("Automation has no valid steps", {
+          console.warn(`[${processId}] Automation has no valid steps`, {
             automationId: automation.id,
           });
+          // Revertir el estado a pending ya que no pudimos procesar
+          await db
+            .update(emailAutomations)
+            .set({ status: "pending" })
+            .where(eq(emailAutomations.id, automation.id));
           results.skipped++;
           continue;
         }
 
         results.processed++;
-        console.info(`Processing automation ${automation.id} for order ${triggerSettings.orderId}`);
 
         // Obtener la plantilla si existe
         let template = null;
@@ -114,43 +147,67 @@ export async function processScheduledEmails () {
         if (emailResult.success) {
           results.sent++;
 
-          // Desactivar la automatización ya que se ejecutó correctamente
+          // Marcar la automatización como completada
           await db
             .update(emailAutomations)
             .set({
               status: "completed",
               isActive: false,
+              updatedAt: new Date(),
             })
             .where(eq(emailAutomations.id, automation.id));
 
           console.info(
-            `Email sent successfully for automation ${automation.id}, order ${triggerSettings.orderId}`
+            `[${processId}] Email sent successfully for automation ${automation.id}, order ${triggerSettings.orderId}`
           );
         } else {
           results.failed++;
-          console.error(`Failed to send email for automation ${automation.id}`, {
+
+          // En caso de fallo, marcar como "failed" para no reintentar automáticamente
+          await db
+            .update(emailAutomations)
+            .set({
+              status: "failed",
+              isActive: false,
+              updatedAt: new Date(),
+            })
+            .where(eq(emailAutomations.id, automation.id));
+
+          console.error(`[${processId}] Failed to send email for automation ${automation.id}`, {
             error: emailResult.error,
             orderId: triggerSettings.orderId,
           });
         }
       } catch (error) {
         results.failed++;
-        console.error(`Error processing automation ${automation.id}`, {
+
+        // En caso de error, marcar como failed
+        await db
+          .update(emailAutomations)
+          .set({
+            status: "failed",
+            isActive: false,
+            updatedAt: new Date(),
+          })
+          .where(eq(emailAutomations.id, automation.id));
+
+        console.error(`[${processId}] Error processing automation ${automation.id}`, {
           error,
         });
       }
     }
 
-    console.info("Finished processing scheduled emails", results);
+    console.info(`[${processId}] Finished processing scheduled emails`, results);
     return results;
   } catch (error) {
-    console.error("Error in email scheduler", { error });
+    console.error(`[${processId}] Error in email scheduler`, { error });
     throw error;
   }
 }
 
 /**
  * Prepara y envía un email basado en una automatización
+ * Incluye verificación de duplicados en email_sends
  */
 export async function prepareAndSendEmail (
   automation: Automation,
@@ -158,8 +215,31 @@ export async function prepareAndSendEmail (
   template: Template | null,
   triggerSettings: TriggerSettings,
   emailConfig: EmailConfig
-): Promise<{ success: boolean; error?: unknown }> {
+): Promise<{ success: boolean; error?: unknown; alreadySent?: boolean }> {
   try {
+    // ✅ VERIFICACIÓN DE DUPLICADOS: Comprobar si ya se envió un email para esta automatización
+    const existingEmailSend = await db
+      .select({ id: emailSends.id, sentAt: emailSends.sentAt })
+      .from(emailSends)
+      .where(
+        sql`${emailSends.metadata}->>'automationId' = ${automation.id.toString()}`
+      )
+      .limit(1);
+
+    if (existingEmailSend.length > 0) {
+      console.warn("Duplicate email send attempt blocked", {
+        automationId: automation.id,
+        orderId: triggerSettings.orderId,
+        previouslySentAt: existingEmailSend[0].sentAt,
+        emailSendId: existingEmailSend[0].id,
+      });
+      return {
+        success: true, // Consideramos éxito porque el email ya fue enviado
+        alreadySent: true,
+        error: `Email already sent for automation ${automation.id} at ${existingEmailSend[0].sentAt}`,
+      };
+    }
+
     // Obtener el suscriptor por ID (más eficiente)
     const [subscriber] = await db
       .select()

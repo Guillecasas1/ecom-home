@@ -8,6 +8,13 @@
       "when": 1741445615189,
       "tag": "0000_lucky_blue_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767280301093,
+      "tag": "0001_nosy_lady_vermin",
+      "breakpoints": true
     }
   ]
 }

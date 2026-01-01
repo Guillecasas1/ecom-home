@@ -5,14 +5,19 @@ import { env } from "@/utils/env/server";
 
 export async function GET (request: NextRequest) {
   const startTime = Date.now();
-  console.info("Email processing CRON job started");
+  const cronId = crypto.randomUUID().slice(0, 8); // ID único para esta ejecución del CRON
+
+  console.info(`[CRON:${cronId}] Email processing CRON job started`, {
+    timestamp: new Date().toISOString(),
+    ip: request.headers.get("x-forwarded-for") || "unknown",
+  });
 
   try {
     // Verificar clave de seguridad para evitar ejecuciones no autorizadas
     const apiKey = request.headers.get("x-api-key");
 
     if (!env.CRON_API_KEY) {
-      console.error("CRON_API_KEY environment variable not set");
+      console.error(`[CRON:${cronId}] CRON_API_KEY environment variable not set`);
       return NextResponse.json(
         {
           error: "Server configuration error",
@@ -23,7 +28,7 @@ export async function GET (request: NextRequest) {
     }
 
     if (apiKey !== env.CRON_API_KEY) {
-      console.warn("Unauthorized CRON job attempt", {
+      console.warn(`[CRON:${cronId}] Unauthorized CRON job attempt`, {
         ip: request.headers.get("x-forwarded-for") || "unknown",
         userAgent: request.headers.get("user-agent") || "unknown",
       });
@@ -34,26 +39,33 @@ export async function GET (request: NextRequest) {
     const results = await processScheduledEmails();
 
     const duration = Date.now() - startTime;
-    console.info("Email processing CRON job completed", {
+    console.info(`[CRON:${cronId}] Email processing CRON job completed`, {
       ...results,
       duration: `${duration}ms`,
+      timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({
       success: true,
+      cronId,
       processed: results,
+      duration: `${duration}ms`,
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error("Email processing CRON job failed", {
-      error,
+    console.error(`[CRON:${cronId}] Email processing CRON job failed`, {
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
       duration: `${duration}ms`,
+      timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json(
       {
         error: "Internal server error",
+        cronId,
         message: error instanceof Error ? error.message : "Unknown error",
+        duration: `${duration}ms`,
       },
       { status: 500 }
     );

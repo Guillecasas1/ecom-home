@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 
 import crypto from "crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { automationSteps, emailAutomations, emailTemplates, subscribers } from "@/db/schema";
 import { WoocommerceOrder } from "@/types/woocommerce";
 import { env } from "@/utils/env/server";
 
-export async function POST(request: Request) {
+export async function POST (request: Request) {
   const clonedRequest = request.clone();
+  const webhookId = crypto.randomUUID().slice(0, 8); // ID único para este webhook
 
   try {
     // Verificar firma del webhook (importante para seguridad)
@@ -17,14 +18,25 @@ export async function POST(request: Request) {
     const rawBody = await clonedRequest.text();
 
     if (!validateWooCommerceSignature(signature, rawBody)) {
-      console.warn("Invalid webhook signature");
+      console.warn(`[WEBHOOK:${webhookId}] Invalid webhook signature`);
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const data = (await request.json()) as WoocommerceOrder;
 
+    console.info(`[WEBHOOK:${webhookId}] WooCommerce order update received`, {
+      orderId: data.id,
+      status: data.status,
+      customerEmail: data.billing.email,
+      timestamp: new Date().toISOString(),
+    });
+
     // Verificar si el estado del pedido cambió a "completed"
     if (data.status !== "completed") {
+      console.info(`[WEBHOOK:${webhookId}] Order ignored - not completed`, {
+        orderId: data.id,
+        status: data.status,
+      });
       return NextResponse.json({
         status: "ignored",
         reason: "Order not completed",
@@ -38,11 +50,11 @@ export async function POST(request: Request) {
       .where(eq(emailTemplates.name, "Review reminder"));
 
     if (!followupTemplate) {
-      console.error("Email template 'Seguimiento post-compra' not found");
+      console.error(`[WEBHOOK:${webhookId}] Email template 'Review reminder' not found`);
       return NextResponse.json(
         {
           error: "Email template not found",
-          hint: "Create a template named 'Seguimiento post-compra'",
+          hint: "Create a template named 'Review reminder'",
         },
         { status: 200 }
       );
@@ -50,6 +62,10 @@ export async function POST(request: Request) {
 
     const result = await processSubscriber(data);
     if (!result.success) {
+      console.error(`[WEBHOOK:${webhookId}] Failed to process subscriber`, {
+        orderId: data.id,
+        error: result.error,
+      });
       return NextResponse.json({ error: result.error }, { status: 200 });
     }
 
@@ -66,12 +82,36 @@ export async function POST(request: Request) {
     });
 
     if (!automationResult.success) {
+      console.error(`[WEBHOOK:${webhookId}] Failed to create automation`, {
+        orderId: data.id,
+        error: automationResult.error,
+      });
       return NextResponse.json({ error: automationResult.error }, { status: 200 });
     }
 
-    console.log("Follow-up email scheduled", {
+    // Si ya existía una automatización para este pedido, responder indicándolo
+    if (automationResult.alreadyExists) {
+      console.info(`[WEBHOOK:${webhookId}] Duplicate webhook blocked - automation already exists`, {
+        orderId: data.id,
+        existingAutomationId: automationResult.automationId,
+        timestamp: new Date().toISOString(),
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Follow-up email already scheduled for this order",
+        details: {
+          orderId: data.id,
+          automationId: automationResult.automationId,
+          alreadyExists: true,
+        },
+      });
+    }
+
+    console.info(`[WEBHOOK:${webhookId}] Follow-up email scheduled successfully`, {
       orderId: data.id,
       scheduledDate: automationResult.scheduledDate,
+      automationId: automationResult.automationId,
+      delayDays,
     });
 
     return NextResponse.json({
@@ -84,13 +124,17 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Error processing WooCommerce webhook:", error);
+    console.error(`[WEBHOOK:${webhookId}] Error processing WooCommerce webhook`, {
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json({ message: "Error" }, { status: 200 });
   }
 }
 
 // Función para validar la firma del webhook
-function validateWooCommerceSignature(signature: string | null, payload: string): boolean {
+function validateWooCommerceSignature (signature: string | null, payload: string): boolean {
   if (!signature) {
     console.warn("Missing webhook signature or secret");
     return false;
@@ -108,13 +152,13 @@ function validateWooCommerceSignature(signature: string | null, payload: string)
 }
 
 // Función para calcular una fecha futura con un delay en días
-function calculateDateAfterDelay(days: number): Date {
+function calculateDateAfterDelay (days: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date;
 }
 
-async function processSubscriber(data: WoocommerceOrder): Promise<{
+async function processSubscriber (data: WoocommerceOrder): Promise<{
   success: boolean;
   subscriberId?: number;
   error?: string;
@@ -186,7 +230,7 @@ async function processSubscriber(data: WoocommerceOrder): Promise<{
   }
 }
 
-async function createFollowupAutomation(params: {
+async function createFollowupAutomation (params: {
   orderId: number;
   subscriberId: number;
   customerEmail: string;
@@ -198,19 +242,48 @@ async function createFollowupAutomation(params: {
   automationId?: number;
   scheduledDate?: Date;
   error?: string;
+  alreadyExists?: boolean;
 }> {
   try {
     const scheduledDate = calculateDateAfterDelay(params.delayDays);
 
+    // ✅ VERIFICACIÓN DE DUPLICADOS: Comprobar si ya existe una automatización para este orderId
+    // Primero verificamos por el nuevo campo orderId, y como fallback por triggerSettings
+    const existingAutomation = await db
+      .select({ id: emailAutomations.id, status: emailAutomations.status })
+      .from(emailAutomations)
+      .where(
+        and(
+          eq(emailAutomations.triggerType, "order_completed"),
+          sql`(${emailAutomations.orderId} = ${params.orderId} OR ${emailAutomations.triggerSettings}->>'orderId' = ${params.orderId.toString()})`
+        )
+      )
+      .limit(1);
+
+    if (existingAutomation.length > 0) {
+      console.warn("Duplicate automation attempt blocked", {
+        orderId: params.orderId,
+        existingAutomationId: existingAutomation[0].id,
+        existingStatus: existingAutomation[0].status,
+      });
+      return {
+        success: true, // No es un error, simplemente ya existe
+        automationId: existingAutomation[0].id,
+        alreadyExists: true,
+        error: `Automation already exists for order #${params.orderId}`,
+      };
+    }
+
     // Transacción para asegurar que ambas operaciones (automatización y paso) se realicen juntas
     const result = await db.transaction(async (tx) => {
-      // Crear la automatización
+      // Crear la automatización con el nuevo campo orderId
       const [newAutomation] = await tx
         .insert(emailAutomations)
         .values({
           name: `Seguimiento Pedido #${params.orderId}`,
           description: `Email automático ${params.delayDays} días después de completar el pedido #${params.orderId}`,
           triggerType: "order_completed",
+          orderId: params.orderId, // Nuevo campo para índice único
           triggerSettings: {
             orderId: params.orderId,
             scheduledDate: scheduledDate.toISOString(),
@@ -235,6 +308,12 @@ async function createFollowupAutomation(params: {
       });
 
       return { automationId: newAutomation.id };
+    });
+
+    console.info("New automation created successfully", {
+      orderId: params.orderId,
+      automationId: result.automationId,
+      scheduledDate: scheduledDate.toISOString(),
     });
 
     return {
