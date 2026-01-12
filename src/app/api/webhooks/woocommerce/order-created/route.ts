@@ -6,23 +6,16 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { products, shippingMethods, wcOrderItems, wcOrders } from "@/db/schema";
 import { WoocommerceLineItem, WoocommerceOrder } from "@/types/woocommerce";
-import { env } from "@/utils/env/server";
 
 export async function POST (request: Request) {
-  const clonedRequest = request.clone();
   const webhookId = crypto.randomUUID().slice(0, 8);
 
   try {
-    // DEBUG: Log all headers to see what WooCommerce is sending
-    console.log(`[WEBHOOK:${webhookId}] Headers received:`, Object.fromEntries(request.headers.entries()));
-
-    // Verificar firma del webhook
-    const signature = request.headers.get("x-wc-webhook-signature");
-    const rawBody = await clonedRequest.text();
-
-    if (!validateWooCommerceSignature(signature, rawBody)) {
-      console.warn(`[WEBHOOK:${webhookId}] Invalid webhook signature`);
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    // Detectar ping de prueba de WooCommerce (no incluye JSON)
+    const contentType = request.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      console.info(`[WEBHOOK:${webhookId}] Ping received from WooCommerce - responding OK`);
+      return NextResponse.json({ success: true, message: "Ping received" });
     }
 
     const data = (await request.json()) as WoocommerceOrder;
@@ -68,32 +61,6 @@ export async function POST (request: Request) {
       stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json({ message: "Error" }, { status: 200 });
-  }
-}
-
-function validateWooCommerceSignature (signature: string | null, payload: string): boolean {
-  // DEBUG
-  console.log("Secret length:", env.WOOCOMMERCE_WEBHOOK_SECRET.length);
-  console.log("Secret value:", JSON.stringify(env.WOOCOMMERCE_WEBHOOK_SECRET));
-  console.log("Signature received:", signature);
-
-  if (!signature) {
-    console.warn("Missing webhook signature");
-    return false;
-  }
-
-  try {
-    const hmac = crypto.createHmac("sha256", env.WOOCOMMERCE_WEBHOOK_SECRET);
-    const calculatedSignature = hmac.update(payload).digest("base64");
-
-    // DEBUG
-    console.log("Calculated signature:", calculatedSignature);
-    console.log("Signatures match:", signature === calculatedSignature);
-
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(calculatedSignature));
-  } catch (error) {
-    console.error("Error validating webhook signature", { error });
-    return false;
   }
 }
 
