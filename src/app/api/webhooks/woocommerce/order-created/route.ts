@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
 import crypto from "crypto";
-import { eq, and, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/db";
-import { wcOrders, wcOrderItems, products, shippingMethods } from "@/db/schema";
-import { WoocommerceOrder, WoocommerceLineItem } from "@/types/woocommerce";
+import { products, shippingMethods, wcOrderItems, wcOrders } from "@/db/schema";
+import { WoocommerceLineItem, WoocommerceOrder } from "@/types/woocommerce";
 import { env } from "@/utils/env/server";
 
-export async function POST(request: Request) {
+export async function POST (request: Request) {
   const clonedRequest = request.clone();
   const webhookId = crypto.randomUUID().slice(0, 8);
 
@@ -68,7 +68,12 @@ export async function POST(request: Request) {
   }
 }
 
-function validateWooCommerceSignature(signature: string | null, payload: string): boolean {
+function validateWooCommerceSignature (signature: string | null, payload: string): boolean {
+  // DEBUG
+  console.log("Secret length:", env.WOOCOMMERCE_WEBHOOK_SECRET.length);
+  console.log("Secret value:", JSON.stringify(env.WOOCOMMERCE_WEBHOOK_SECRET));
+  console.log("Signature received:", signature);
+
   if (!signature) {
     console.warn("Missing webhook signature");
     return false;
@@ -77,6 +82,11 @@ function validateWooCommerceSignature(signature: string | null, payload: string)
   try {
     const hmac = crypto.createHmac("sha256", env.WOOCOMMERCE_WEBHOOK_SECRET);
     const calculatedSignature = hmac.update(payload).digest("base64");
+
+    // DEBUG
+    console.log("Calculated signature:", calculatedSignature);
+    console.log("Signatures match:", signature === calculatedSignature);
+
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(calculatedSignature));
   } catch (error) {
     console.error("Error validating webhook signature", { error });
@@ -84,7 +94,7 @@ function validateWooCommerceSignature(signature: string | null, payload: string)
   }
 }
 
-async function processOrder(
+async function processOrder (
   data: WoocommerceOrder,
   webhookId: string
 ): Promise<{
@@ -165,7 +175,7 @@ async function processOrder(
 
     for (const item of data.line_items) {
       const productResult = await findOrCreateProduct(item);
-      
+
       // Calcular costes si el producto tiene coste asignado
       let unitCost: string | null = null;
       let totalCost: string | null = null;
@@ -207,7 +217,7 @@ async function processOrder(
   }
 }
 
-async function findOrCreateShippingMethod(
+async function findOrCreateShippingMethod (
   methodId: string,
   methodTitle: string
 ): Promise<{ id: number; cost: string | null }> {
@@ -230,7 +240,7 @@ async function findOrCreateShippingMethod(
   if (lowerMethodId.includes("nacex") || lowerTitle.includes("nacex")) {
     provider = "nacex";
   } else if (
-    lowerMethodId.includes("correos") || 
+    lowerMethodId.includes("correos") ||
     lowerTitle.includes("correos") ||
     lowerMethodId.includes("postal") ||
     lowerTitle.includes("postal")
@@ -252,7 +262,7 @@ async function findOrCreateShippingMethod(
   return { id: newMethod.id, cost: newMethod.cost };
 }
 
-async function findOrCreateProduct(
+async function findOrCreateProduct (
   item: WoocommerceLineItem
 ): Promise<{ id: number; currentCost: string | null }> {
   const variationId = item.variation_id || null;
@@ -264,13 +274,13 @@ async function findOrCreateProduct(
     .where(
       variationId
         ? and(
-            eq(products.wcProductId, item.product_id),
-            eq(products.wcVariationId, variationId)
-          )
+          eq(products.wcProductId, item.product_id),
+          eq(products.wcVariationId, variationId)
+        )
         : and(
-            eq(products.wcProductId, item.product_id),
-            isNull(products.wcVariationId)
-          )
+          eq(products.wcProductId, item.product_id),
+          isNull(products.wcVariationId)
+        )
     )
     .limit(1);
 
