@@ -13,6 +13,9 @@ export async function POST (request: Request) {
   const webhookId = crypto.randomUUID().slice(0, 8);
 
   try {
+    // DEBUG: Log all headers to see what WooCommerce is sending
+    console.log(`[WEBHOOK:${webhookId}] Headers received:`, Object.fromEntries(request.headers.entries()));
+
     // Verificar firma del webhook
     const signature = request.headers.get("x-wc-webhook-signature");
     const rawBody = await clonedRequest.text();
