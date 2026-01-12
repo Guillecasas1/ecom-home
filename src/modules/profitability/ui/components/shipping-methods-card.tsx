@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { AlertTriangle, Check, Pencil, Truck, X } from "lucide-react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,15 +23,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn, formatCurrency } from "@/lib/utils";
 import { updateShippingMethodAction } from "@/modules/profitability/actions";
 import { ShippingMethodWithStats } from "@/modules/profitability/services/shipping-service";
-import { cn, formatCurrency } from "@/lib/utils";
 
 interface ShippingMethodsCardProps {
   methods: ShippingMethodWithStats[];
 }
 
-function EditableRow({ method }: { method: ShippingMethodWithStats }) {
+function EditableRow ({ method }: { method: ShippingMethodWithStats }) {
   const [isEditing, setIsEditing] = useState(false);
   const [cost, setCost] = useState(method.cost || "");
   const [provider, setProvider] = useState(method.provider);
@@ -67,7 +67,7 @@ function EditableRow({ method }: { method: ShippingMethodWithStats }) {
           <Truck className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{method.name}</span>
           {!hasCost && (
-            <AlertTriangle className="h-4 w-4 text-amber-500" title="Sin coste asignado" />
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
           )}
         </div>
       </TableCell>
@@ -169,7 +169,7 @@ function EditableRow({ method }: { method: ShippingMethodWithStats }) {
   );
 }
 
-export function ShippingMethodsCard({ methods }: ShippingMethodsCardProps) {
+export function ShippingMethodsCard ({ methods }: ShippingMethodsCardProps) {
   const methodsWithoutCost = methods.filter((m) => m.cost === null && m.isActive);
 
   return (

@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, ArrowUpDown, Check, Pencil, X } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ProductWithStats } from "@/modules/profitability/services/products-service";
 import { cn, formatCurrency } from "@/lib/utils";
+import type { ProductWithStats } from "@/modules/profitability/types";
 
 interface EditableCostCellProps {
   product: ProductWithStats;
   onSave: (id: number, cost: number | null) => Promise<void>;
 }
 
-function EditableCostCell({ product, onSave }: EditableCostCellProps) {
+function EditableCostCell ({ product, onSave }: EditableCostCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(product.currentCost || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -110,7 +110,7 @@ function EditableCostCell({ product, onSave }: EditableCostCellProps) {
   );
 }
 
-export function createProductsColumns(
+export function createProductsColumns (
   onSaveCost: (id: number, cost: number | null) => Promise<void>
 ): ColumnDef<ProductWithStats>[] {
   return [

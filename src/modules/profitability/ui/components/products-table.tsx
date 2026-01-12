@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
 import {
   ColumnFiltersState,
   SortingState,
@@ -8,11 +7,11 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
+  useReactTable
 } from "@tanstack/react-table";
 import { AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { updateProductCostAction } from "@/modules/profitability/actions";
-import { ProductWithStats } from "@/modules/profitability/services/products-service";
+import type { ProductWithStats } from "@/modules/profitability/types";
 import { createProductsColumns } from "./products-columns";
 
 interface ProductsTableProps {
@@ -51,7 +50,7 @@ interface ProductsTableProps {
   onSearchChange: (query: string) => void;
 }
 
-export function ProductsTable({
+export function ProductsTable ({
   data,
   totalCount,
   page,

@@ -1,13 +1,13 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, ArrowUpDown, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowUpDown } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { OrderSummary } from "@/modules/profitability/types";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { OrderSummary } from "@/modules/profitability/types";
 
 export const ordersColumns: ColumnDef<OrderSummary>[] = [
   {
@@ -24,7 +24,7 @@ export const ordersColumns: ColumnDef<OrderSummary>[] = [
     ),
     cell: ({ row }) => {
       const hasAlert = row.original.hasItemsWithoutCost || row.original.hasShippingWithoutCost;
-      
+
       return (
         <div className="flex items-center gap-2">
           <span className="font-medium">#{row.original.orderNumber}</span>
@@ -75,7 +75,7 @@ export const ordersColumns: ColumnDef<OrderSummary>[] = [
         refunded: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
         "on-hold": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
       };
-      
+
       return (
         <Badge className={cn("capitalize", statusColors[status] || "")}>
           {status}
