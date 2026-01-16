@@ -17,12 +17,12 @@ import { ShippingMethodWithStats } from "@/modules/profitability/services/shippi
 import type { ProductWithStats } from "@/modules/profitability/types";
 import { DashboardStats, OrderSummary } from "@/modules/profitability/types";
 import {
+  DashboardCards,
   DateRangePicker,
   OrdersTable,
   PackagingCostCard,
   ProductsTable,
-  ShippingMethodsCard,
-  StatsCards,
+  ShippingMethodsCard
 } from "@/modules/profitability/ui/components";
 
 export default function ProfitabilityDashboardPage () {
@@ -148,7 +148,7 @@ export default function ProfitabilityDashboardPage () {
         </div>
       </div>
 
-      {stats && <StatsCards stats={stats} />}
+      {stats && <DashboardCards stats={stats} />}
 
       <Tabs defaultValue="orders" className="space-y-4">
         <TabsList>

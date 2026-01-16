@@ -237,7 +237,20 @@ async function findOrCreateProduct (
 ): Promise<{ id: number; currentCost: string | null }> {
   const variationId = item.variation_id || null;
 
-  // Buscar producto existente
+  // Buscar producto por SKU (identificador único preferido)
+  if (item.sku) {
+    const [existingProductBySku] = await db
+      .select()
+      .from(products)
+      .where(eq(products.sku, item.sku))
+      .limit(1);
+
+    if (existingProductBySku) {
+      return { id: existingProductBySku.id, currentCost: existingProductBySku.currentCost };
+    }
+  }
+
+  // Fallback: buscar por wcProductId + wcVariationId (para productos sin SKU)
   const [existingProduct] = await db
     .select()
     .from(products)

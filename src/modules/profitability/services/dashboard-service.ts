@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { products, profitabilitySettings, shippingMethods, wcOrderItems, wcOrders } from "@/db/schema";
 import { DashboardStats, DateRange, DEFAULT_PACKAGING_COST, OrderSummary, SETTINGS_KEYS } from "../types";
 
-export async function getPackagingCost(): Promise<number> {
+export async function getPackagingCost (): Promise<number> {
   const [setting] = await db
     .select()
     .from(profitabilitySettings)
@@ -14,7 +14,7 @@ export async function getPackagingCost(): Promise<number> {
   return parseFloat(setting?.value || DEFAULT_PACKAGING_COST);
 }
 
-export async function setPackagingCost(cost: number): Promise<void> {
+export async function setPackagingCost (cost: number): Promise<void> {
   const [existing] = await db
     .select()
     .from(profitabilitySettings)
@@ -35,18 +35,18 @@ export async function setPackagingCost(cost: number): Promise<void> {
   }
 }
 
-export async function getDashboardStats(dateRange?: DateRange): Promise<DashboardStats> {
+export async function getDashboardStats (dateRange?: DateRange): Promise<DashboardStats> {
   const packagingCost = await getPackagingCost();
 
   // Construir condiciones de fecha
   const dateConditions = dateRange
     ? and(
-        gte(wcOrders.orderDate, dateRange.from),
-        lte(wcOrders.orderDate, dateRange.to)
-      )
+      gte(wcOrders.orderDate, dateRange.from),
+      lte(wcOrders.orderDate, dateRange.to)
+    )
     : undefined;
 
-  // Obtener totales de pedidos
+  // Obtener totales de pedidos (ventas totales y ventas de envío)
   const ordersQuery = db
     .select({
       totalOrders: count(),
@@ -58,16 +58,17 @@ export async function getDashboardStats(dateRange?: DateRange): Promise<Dashboar
 
   const [ordersResult] = await ordersQuery;
 
-  // Obtener costes de productos
-  const productCostsQuery = db
+  // Obtener costes de productos y ventas de productos (desde items)
+  const productStatsQuery = db
     .select({
       totalProductCost: sum(wcOrderItems.totalCost),
+      totalProductSales: sum(wcOrderItems.totalPrice),
     })
     .from(wcOrderItems)
     .innerJoin(wcOrders, eq(wcOrderItems.orderId, wcOrders.id))
     .where(dateConditions);
 
-  const [productCostsResult] = await productCostsQuery;
+  const [productStatsResult] = await productStatsQuery;
 
   // Obtener costes de envío
   const shippingCostsQuery = db
@@ -105,15 +106,34 @@ export async function getDashboardStats(dateRange?: DateRange): Promise<Dashboar
     .from(shippingMethods)
     .where(and(eq(shippingMethods.isActive, true), isNull(shippingMethods.cost)));
 
-  // Calcular totales
+  // Calcular totales base
   const totalOrders = ordersResult.totalOrders || 0;
   const totalSales = parseFloat(ordersResult.totalSales || "0");
-  const totalProductCost = parseFloat(productCostsResult.totalProductCost || "0");
+  const shippingSales = parseFloat(ordersResult.totalShippingSales || "0");
+  const productSales = parseFloat(productStatsResult.totalProductSales || "0");
+
+  // Costes
+  const totalProductCost = parseFloat(productStatsResult.totalProductCost || "0");
   const totalShippingCost = parseFloat(shippingCostsResult.totalShippingCost || "0");
   const totalPackagingCost = totalOrders * packagingCost;
   const totalCosts = totalProductCost + totalShippingCost + totalPackagingCost;
-  const totalProfit = totalSales - totalCosts;
-  const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+
+  // Beneficios
+  const grossProfit = productSales - totalProductCost; // Solo producto
+  const netProfit = totalSales - totalCosts; // Todo incluido
+
+  // Márgenes
+  const grossMargin = productSales > 0 ? (grossProfit / productSales) * 100 : 0;
+  const netMargin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0;
+  const productOnlyMargin = productSales > 0 ? ((productSales - totalProductCost) / productSales) * 100 : 0;
+  const fullMargin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0;
+
+  // Métricas adicionales
+  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+  const averageProductCostPerOrder = totalOrders > 0 ? totalProductCost / totalOrders : 0;
+  const averageShippingCostPerOrder = totalOrders > 0 ? totalShippingCost / totalOrders : 0;
+  const shippingCostVsRevenue = shippingSales > 0 ? (totalShippingCost / shippingSales) * 100 : 0;
+  const profitPerOrder = totalOrders > 0 ? netProfit / totalOrders : 0;
 
   // Etiqueta del período
   let periodLabel = "Todo el tiempo";
@@ -124,19 +144,52 @@ export async function getDashboardStats(dateRange?: DateRange): Promise<Dashboar
   }
 
   return {
+    // Totales generales
     totalOrders,
     totalSales,
+
+    // Desglose de ingresos
+    productSales,
+    shippingSales,
+
+    // Desglose de costes
+    totalProductCost,
+    totalShippingCost,
+    totalPackagingCost,
     totalCosts,
-    totalProfit,
-    profitMargin,
+
+    // Beneficios
+    grossProfit,
+    netProfit,
+
+    // Márgenes
+    grossMargin,
+    netMargin,
+    productOnlyMargin,
+    fullMargin,
+
+    // Métricas adicionales
+    averageOrderValue,
+    averageProductCostPerOrder,
+    averageShippingCostPerOrder,
+    shippingCostVsRevenue,
+    profitPerOrder,
+
+    // Alertas
     ordersWithMissingCosts: ordersWithMissingCosts.count || 0,
     productsMissingCosts: productsMissingCosts.count || 0,
     shippingMethodsMissingCosts: shippingMissingCosts.count || 0,
+
+    // Período
     periodLabel,
+
+    // Legacy
+    totalProfit: netProfit,
+    profitMargin: netMargin,
   };
 }
 
-export async function getOrdersSummary(
+export async function getOrdersSummary (
   dateRange?: DateRange,
   page = 1,
   pageSize = 20
@@ -147,9 +200,9 @@ export async function getOrdersSummary(
   // Construir condiciones de fecha
   const dateConditions = dateRange
     ? and(
-        gte(wcOrders.orderDate, dateRange.from),
-        lte(wcOrders.orderDate, dateRange.to)
-      )
+      gte(wcOrders.orderDate, dateRange.from),
+      lte(wcOrders.orderDate, dateRange.to)
+    )
     : undefined;
 
   // Contar total

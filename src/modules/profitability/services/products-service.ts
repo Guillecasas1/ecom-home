@@ -13,7 +13,7 @@ export type ProductsFilter = {
   sortOrder?: "asc" | "desc";
 };
 
-export async function getProducts(filter: ProductsFilter = {}): Promise<{
+export async function getProducts (filter: ProductsFilter = {}): Promise<{
   products: ProductWithStats[];
   total: number;
 }> {
@@ -30,7 +30,7 @@ export async function getProducts(filter: ProductsFilter = {}): Promise<{
 
   // Construir condiciones
   const conditions = [];
-  
+
   if (search) {
     conditions.push(
       or(
@@ -132,7 +132,7 @@ export async function getProducts(filter: ProductsFilter = {}): Promise<{
   return { products: productsWithStats, total: totalResult.count };
 }
 
-export async function getProduct(id: number): Promise<Product | null> {
+export async function getProduct (id: number): Promise<Product | null> {
   const [product] = await db
     .select()
     .from(products)
@@ -142,19 +142,23 @@ export async function getProduct(id: number): Promise<Product | null> {
   return product || null;
 }
 
-export async function updateProductCost(
+export async function updateProductCost (
   id: number,
   cost: number | null
 ): Promise<Product> {
   const [updated] = await db
     .update(products)
     .set({
-      currentCost: cost?.toString() || null,
+      currentCost: cost !== null ? cost.toString() : null,
       costUpdatedAt: cost !== null ? new Date() : null,
       updatedAt: new Date(),
     })
     .where(eq(products.id, id))
     .returning();
+
+  if (!updated) {
+    throw new Error(`Product with id ${id} not found`);
+  }
 
   // Actualizar los costes en los items de pedidos existentes
   if (cost !== null) {
@@ -162,7 +166,7 @@ export async function updateProductCost(
       .update(wcOrderItems)
       .set({
         unitCost: cost.toString(),
-        totalCost: sql`${cost} * ${wcOrderItems.quantity}`,
+        totalCost: sql<string>`ROUND(${cost}::numeric * ${wcOrderItems.quantity}, 2)`,
       })
       .where(eq(wcOrderItems.productId, id));
   }
@@ -170,7 +174,7 @@ export async function updateProductCost(
   return updated;
 }
 
-export async function bulkUpdateProductCosts(
+export async function bulkUpdateProductCosts (
   updates: { id: number; cost: number | null }[]
 ): Promise<number> {
   let updatedCount = 0;
@@ -183,7 +187,7 @@ export async function bulkUpdateProductCosts(
   return updatedCount;
 }
 
-export async function getProductsWithoutCost(): Promise<Product[]> {
+export async function getProductsWithoutCost (): Promise<Product[]> {
   return db
     .select()
     .from(products)
@@ -191,7 +195,7 @@ export async function getProductsWithoutCost(): Promise<Product[]> {
     .orderBy(asc(products.name));
 }
 
-export async function countProductsWithoutCost(): Promise<number> {
+export async function countProductsWithoutCost (): Promise<number> {
   const [result] = await db
     .select({ count: count() })
     .from(products)
