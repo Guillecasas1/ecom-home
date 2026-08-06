@@ -342,6 +342,78 @@ export async function prepareAndSendEmail (
   }
 }
 
+// Días sin automatizaciones nuevas a partir de los cuales se considera que el webhook está caído
+const WEBHOOK_STALE_DAYS = 5;
+
+/**
+ * Vigilancia anti-silencio: si el webhook de WooCommerce deja de crear automatizaciones
+ * (como pasó de enero a agosto de 2026), avisa por email al buzón de la tienda.
+ * Se ejecuta a diario desde el CRON de process-emails.
+ */
+export async function checkAutomationHealth (): Promise<{
+  stale: boolean;
+  daysSinceLastAutomation: number | null;
+  alertSent: boolean;
+}> {
+  const [row] = await db
+    .select({ last: sql<string | null>`max(${emailAutomations.createdAt})` })
+    .from(emailAutomations)
+    .where(eq(emailAutomations.triggerType, "order_completed"));
+
+  const last = row?.last ? new Date(row.last) : null;
+  const daysSince = last ? Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24)) : null;
+  const stale = daysSince === null || daysSince >= WEBHOOK_STALE_DAYS;
+
+  if (!stale) {
+    return { stale: false, daysSinceLastAutomation: daysSince, alertSent: false };
+  }
+
+  const [emailConfig] = await db
+    .select()
+    .from(emailSettings)
+    .where(eq(emailSettings.isActive, true))
+    .limit(1);
+
+  if (!emailConfig) {
+    console.error("Webhook health check: webhook stale but no active email configuration to send the alert");
+    return { stale: true, daysSinceLastAutomation: daysSince, alertSent: false };
+  }
+
+  const to = emailConfig.defaultReplyTo || emailConfig.defaultFromEmail;
+  const daysLabel = daysSince === null ? "nunca (sin registros)" : `hace ${daysSince} días`;
+
+  const result = await sendEmail({
+    to,
+    subject: `⚠️ Reviews: el webhook de WooCommerce no crea automatizaciones (última ${daysLabel})`,
+    html: `
+      <h2>El sistema de solicitud de reviews no recibe pedidos nuevos</h2>
+      <p>La última automatización de «pedido completado» se creó <strong>${daysLabel}</strong>.
+      Con la tienda vendiendo a diario, esto casi seguro significa que el webhook de WooCommerce
+      ha dejado de entregar (WooCommerce los desactiva solo tras varios fallos seguidos).</p>
+      <p><strong>Dónde mirar:</strong> wp-admin de labatitapresumida.com → WooCommerce → Ajustes →
+      Avanzado → Webhooks → «Pedido actualizado». Debe estar <em>Activo</em>, apuntar a
+      <code>https://ecom-home.vercel.app/api/webhooks/woocommerce/order-update</code> y usar el
+      secreto guardado en el .env de ecom-home (WOOCOMMERCE_WEBHOOK_SECRET).</p>
+      <p>Este aviso se repetirá cada día mientras el problema siga.</p>
+    `,
+    from: {
+      name: "Vigilancia ecom-home",
+      email: emailConfig.defaultFromEmail,
+    },
+    trackOpens: false,
+    trackClicks: false,
+    metadata: { type: "webhook_health_alert" },
+  });
+
+  if (result.success) {
+    console.warn("Webhook health alert sent", { to, daysSince });
+  } else {
+    console.error("Webhook health alert failed to send", { to, daysSince, error: result.error });
+  }
+
+  return { stale: true, daysSinceLastAutomation: daysSince, alertSent: result.success };
+}
+
 /**
  * Personaliza el contenido del email sustituyendo variables
  */

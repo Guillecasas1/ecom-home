@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { processScheduledEmails } from "@/modules/mailing/services/email-scheduler";
+import { checkAutomationHealth, processScheduledEmails } from "@/modules/mailing/services/email-scheduler";
 import { env } from "@/utils/env/server";
 
 export async function GET (request: NextRequest) {
@@ -38,9 +38,13 @@ export async function GET (request: NextRequest) {
     // Procesar los emails programados con manejo de errores
     const results = await processScheduledEmails();
 
+    // Vigilancia anti-silencio: avisa si el webhook lleva días sin crear automatizaciones
+    const health = await checkAutomationHealth();
+
     const duration = Date.now() - startTime;
     console.info(`[CRON:${cronId}] Email processing CRON job completed`, {
       ...results,
+      webhookHealth: health,
       duration: `${duration}ms`,
       timestamp: new Date().toISOString(),
     });
@@ -49,6 +53,7 @@ export async function GET (request: NextRequest) {
       success: true,
       cronId,
       processed: results,
+      webhookHealth: health,
       duration: `${duration}ms`,
     });
   } catch (error) {
